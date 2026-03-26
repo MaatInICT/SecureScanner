@@ -44,7 +44,7 @@ export const credentialRules: IScannerRule[] = [
     description: 'A hardcoded password was found. Use environment variables or a secrets manager.',
     severity: Severity.High,
     category: FindingCategory.Credential,
-    pattern: /(?:password|passwd|pwd)\s*[:=]\s*['"][^'"]{4,}['"]/gi,
+    pattern: /(?<![A-Za-z0-9_])(?:password|passwd|pwd)\s*[:=]\s*['"](?!(?:true|false|yes|no|none|null|undefined|0|1|\*+|x+|\.+|<[^>]*>|\{[^}]*\})['"])[^'"]{4,}['"]/gi,
     cweId: 'CWE-798',
   },
   {

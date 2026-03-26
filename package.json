@@ -2,7 +2,7 @@
   "name": "securescanner",
   "displayName": "SecureScanner",
   "description": "Scan your codebase for security vulnerabilities, credentials, OWASP Top 10, and misconfigurations",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "publisher": "MaatInICT",
   "engines": {
     "vscode": "^1.85.0"
@@ -117,6 +117,21 @@
             "filehygiene"
           ],
           "description": "Which scanner categories to enable"
+        },
+        "secureScanner.projectType": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "git",
+            "local"
+          ],
+          "enumDescriptions": [
+            "Auto-detect: checks if a .git folder exists in the workspace root",
+            "Git project: always run git-related checks (.gitignore validation, unignored sensitive files)",
+            "Local project: skip all git-related checks (no .gitignore warnings)"
+          ],
+          "description": "Project type determines whether git-related security checks are performed. Use 'local' for codebases not under version control to avoid .gitignore-related findings."
         },
         "secureScanner.maxFileSizeKB": {
           "type": "number",

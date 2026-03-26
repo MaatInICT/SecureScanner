@@ -1,5 +1,7 @@
 import { FindingCategory, Severity } from './finding';
 
+export type ProjectType = 'auto' | 'git' | 'local';
+
 export interface SecureScannerConfig {
   enableOnSave: boolean;
   enableOnOpen: boolean;
@@ -7,4 +9,5 @@ export interface SecureScannerConfig {
   ignorePaths: string[];
   enabledCategories: FindingCategory[];
   maxFileSizeKB: number;
+  projectType: ProjectType;
 }

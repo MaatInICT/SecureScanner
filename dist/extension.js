@@ -1968,11 +1968,12 @@ __export(extension_exports, {
 });
 module.exports = __toCommonJS(extension_exports);
 var vscode9 = __toESM(require("vscode"));
-var path4 = __toESM(require("path"));
+var path5 = __toESM(require("path"));
 var fs4 = __toESM(require("fs"));
 
 // src/engine/scannerEngine.ts
 var vscode2 = __toESM(require("vscode"));
+var path2 = __toESM(require("path"));
 var fs2 = __toESM(require("fs"));
 
 // src/types/finding.ts
@@ -2141,7 +2142,7 @@ var credentialRules = [
     description: "A hardcoded password was found. Use environment variables or a secrets manager.",
     severity: 1 /* High */,
     category: "credential" /* Credential */,
-    pattern: /(?:password|passwd|pwd)\s*[:=]\s*['"][^'"]{4,}['"]/gi,
+    pattern: /(?<![A-Za-z0-9_])(?:password|passwd|pwd)\s*[:=]\s*['"](?!(?:true|false|yes|no|none|null|undefined|0|1|\*+|x+|\.+|<[^>]*>|\{[^}]*\})['"])[^'"]{4,}['"]/gi,
     cweId: "CWE-798"
   },
   {
@@ -2777,12 +2778,30 @@ var misconfigRules = [
 ];
 
 // src/scanners/misconfigScanner.ts
+var VERSION_CONTEXT_PATTERN = /(?:version|versie|versienummer|version_?number)\b|(?:^|[\s(,=:])v\d/i;
 var MisconfigScanner = class {
   constructor() {
     this.name = "MisconfigScanner";
   }
   scan(context) {
-    return runRules(misconfigRules, context);
+    const findings = runRules(misconfigRules, context);
+    return findings.filter((f) => {
+      if (f.id !== "MISC-007") {
+        return true;
+      }
+      return !this.isVersionContext(context.content, f.location.startLine);
+    });
+  }
+  /**
+   * Check if the line containing the match has version-related context,
+   * indicating the matched "IP" is actually a version number.
+   */
+  isVersionContext(content, lineNumber) {
+    const lines = content.split("\n");
+    if (lineNumber < 0 || lineNumber >= lines.length) {
+      return false;
+    }
+    return VERSION_CONTEXT_PATTERN.test(lines[lineNumber]);
   }
 };
 
@@ -3006,7 +3025,7 @@ var FileHygieneScanner = class {
   }
   scan(context) {
     const fileName = context.filePath.split(/[/\\]/).pop() || "";
-    if (fileName === ".gitignore") {
+    if (fileName === ".gitignore" && context.isGitProject !== false) {
       return this.scanGitignore(context);
     }
     if (fileName === ".aiignore") {
@@ -3019,25 +3038,58 @@ var FileHygieneScanner = class {
    * from file content alone (missing files, unignored sensitive files).
    * Called separately from the normal per-file scan.
    */
-  async scanWorkspace(workspaceRoot) {
+  async scanWorkspace(workspaceRoot, isGitProject = true) {
     const findings = [];
-    const gitignorePath = path.join(workspaceRoot, ".gitignore");
-    if (!fs.existsSync(gitignorePath)) {
-      findings.push({
-        id: "FH-100",
-        category: "filehygiene" /* FileHygiene */,
-        severity: 1 /* High */,
-        title: "Missing .gitignore file",
-        description: "No .gitignore file found in the workspace root. Without a .gitignore, sensitive files like .env, private keys, and credentials may be accidentally committed to version control.",
-        location: {
-          filePath: workspaceRoot,
-          startLine: 0,
-          startColumn: 0,
-          endLine: 0,
-          endColumn: 0
-        },
-        cweId: "CWE-540"
-      });
+    if (isGitProject) {
+      const gitignorePath = path.join(workspaceRoot, ".gitignore");
+      if (!fs.existsSync(gitignorePath)) {
+        findings.push({
+          id: "FH-100",
+          category: "filehygiene" /* FileHygiene */,
+          severity: 1 /* High */,
+          title: "Missing .gitignore file",
+          description: "No .gitignore file found in the workspace root. Without a .gitignore, sensitive files like .env, private keys, and credentials may be accidentally committed to version control.",
+          location: {
+            filePath: workspaceRoot,
+            startLine: 0,
+            startColumn: 0,
+            endLine: 0,
+            endColumn: 0
+          },
+          cweId: "CWE-540"
+        });
+      }
+      const gitignoreContent = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath, "utf8") : "";
+      for (const sensitiveFile of sensitiveFilePatterns) {
+        if (this.isPatternCovered(sensitiveFile.glob, gitignoreContent)) {
+          continue;
+        }
+        try {
+          const files = await vscode.workspace.findFiles(
+            sensitiveFile.glob,
+            "**/node_modules/**",
+            5
+          );
+          for (const file of files) {
+            findings.push({
+              id: sensitiveFile.ruleId,
+              category: "filehygiene" /* FileHygiene */,
+              severity: sensitiveFile.severity,
+              title: sensitiveFile.title,
+              description: sensitiveFile.description,
+              location: {
+                filePath: file.fsPath,
+                startLine: 0,
+                startColumn: 0,
+                endLine: 0,
+                endColumn: 0
+              },
+              cweId: sensitiveFile.cweId
+            });
+          }
+        } catch {
+        }
+      }
     }
     const aiignorePath = path.join(workspaceRoot, ".aiignore");
     if (!fs.existsSync(aiignorePath)) {
@@ -3056,37 +3108,6 @@ var FileHygieneScanner = class {
         },
         cweId: "CWE-540"
       });
-    }
-    const gitignoreContent = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath, "utf8") : "";
-    for (const sensitiveFile of sensitiveFilePatterns) {
-      if (this.isPatternCovered(sensitiveFile.glob, gitignoreContent)) {
-        continue;
-      }
-      try {
-        const files = await vscode.workspace.findFiles(
-          sensitiveFile.glob,
-          "**/node_modules/**",
-          5
-        );
-        for (const file of files) {
-          findings.push({
-            id: sensitiveFile.ruleId,
-            category: "filehygiene" /* FileHygiene */,
-            severity: sensitiveFile.severity,
-            title: sensitiveFile.title,
-            description: sensitiveFile.description,
-            location: {
-              filePath: file.fsPath,
-              startLine: 0,
-              startColumn: 0,
-              endLine: 0,
-              endColumn: 0
-            },
-            cweId: sensitiveFile.cweId
-          });
-        }
-      } catch {
-      }
     }
     return findings;
   }
@@ -3273,7 +3294,8 @@ var ScannerEngine = class {
         "misconfiguration" /* Misconfiguration */,
         "filehygiene" /* FileHygiene */
       ]),
-      maxFileSizeKB: config.get("maxFileSizeKB", 512)
+      maxFileSizeKB: config.get("maxFileSizeKB", 512),
+      projectType: config.get("projectType", "auto")
     };
   }
   scanDocument(document) {
@@ -3289,10 +3311,14 @@ var ScannerEngine = class {
         return [];
       }
     }
+    const workspaceFolder = vscode2.workspace.getWorkspaceFolder(document.uri);
+    const workspaceRoot = workspaceFolder?.uri.fsPath || "";
+    const isGitProject = workspaceRoot ? this.resolveIsGitProject(config.projectType, workspaceRoot) : true;
     const context = {
       filePath,
       content,
-      languageId: document.languageId
+      languageId: document.languageId,
+      isGitProject
     };
     const findings = [];
     const scanners = this.registry.getAll();
@@ -3314,6 +3340,7 @@ var ScannerEngine = class {
     return findings;
   }
   async scanWorkspace() {
+    this.findingsMap.clear();
     const allFindings = [];
     const config = this.getConfig();
     const ignorePattern = config.ignorePaths.length > 0 ? "{" + config.ignorePaths.join(",") + "}" : void 0;
@@ -3335,11 +3362,11 @@ var ScannerEngine = class {
       const workspaceFolders = vscode2.workspace.workspaceFolders;
       if (workspaceFolders) {
         for (const folder of workspaceFolders) {
-          const hygieneFindings = await this.fileHygieneScanner.scanWorkspace(folder.uri.fsPath);
+          const isGit = this.resolveIsGitProject(config.projectType, folder.uri.fsPath);
+          const hygieneFindings = await this.fileHygieneScanner.scanWorkspace(folder.uri.fsPath, isGit);
           const filtered = hygieneFindings.filter((f) => f.severity <= config.severityThreshold);
           allFindings.push(...filtered);
-          const existing = this.findingsMap.get(folder.uri.fsPath) || [];
-          this.findingsMap.set(folder.uri.fsPath, [...existing, ...filtered]);
+          this.findingsMap.set(folder.uri.fsPath, filtered);
         }
         this._onFindingsChanged.fire(this.findingsMap);
       }
@@ -3352,6 +3379,19 @@ var ScannerEngine = class {
   clearFindings() {
     this.findingsMap.clear();
     this._onFindingsChanged.fire(this.findingsMap);
+  }
+  /**
+   * Resolve whether this is a git project based on the projectType setting.
+   * 'auto' checks for the existence of a .git folder in the workspace root.
+   */
+  resolveIsGitProject(projectType, workspaceRoot) {
+    if (projectType === "git") {
+      return true;
+    }
+    if (projectType === "local") {
+      return false;
+    }
+    return fs2.existsSync(path2.join(workspaceRoot, ".git"));
   }
   dispose() {
     this._onFindingsChanged.dispose();
@@ -3443,7 +3483,7 @@ var DiagnosticsProvider = class {
 
 // src/providers/treeViewProvider.ts
 var vscode5 = __toESM(require("vscode"));
-var path2 = __toESM(require("path"));
+var path3 = __toESM(require("path"));
 var CategoryNode = class extends vscode5.TreeItem {
   constructor(category, count) {
     super(
@@ -3463,7 +3503,7 @@ var FindingNode = class extends vscode5.TreeItem {
       vscode5.TreeItemCollapsibleState.None
     );
     this.finding = finding;
-    this.description = `${path2.basename(finding.location.filePath)}:${finding.location.startLine + 1}`;
+    this.description = `${path3.basename(finding.location.filePath)}:${finding.location.startLine + 1}`;
     this.tooltip = finding.description;
     this.contextValue = "finding";
     this.command = {
@@ -3699,7 +3739,7 @@ var SecurityHoverProvider = class {
 
 // src/webview/dashboardPanel.ts
 var vscode8 = __toESM(require("vscode"));
-var path3 = __toESM(require("path"));
+var path4 = __toESM(require("path"));
 var fs3 = __toESM(require("fs"));
 
 // src/engine/vulnDbUpdater.ts
@@ -4067,7 +4107,7 @@ var DashboardPanel = class _DashboardPanel {
         }
       );
       const globalStoragePath = this.globalStorageUri.fsPath;
-      const vulnDbPath = path3.join(globalStoragePath, "vulnDb.json");
+      const vulnDbPath = path4.join(globalStoragePath, "vulnDb.json");
       const vulnDbData = {
         updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
         npmVulnerabilities: result.npm,
@@ -4520,7 +4560,7 @@ var engine;
 function activate(context) {
   engine = new ScannerEngine();
   const globalStoragePath = context.globalStorageUri.fsPath;
-  const vulnDbPath = path4.join(globalStoragePath, "vulnDb.json");
+  const vulnDbPath = path5.join(globalStoragePath, "vulnDb.json");
   if (fs4.existsSync(vulnDbPath)) {
     engine.loadExternalVulnDb(vulnDbPath);
   }
