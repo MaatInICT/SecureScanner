@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Security Shield Shape -->
+  <defs>
+    <clipPath id="shieldClip">
+      <path d="M200 20 C200 20 340 50 340 50 C340 50 340 220 340 220 C340 300 200 380 200 380 C200 380 60 300 60 300 C60 220 60 50 60 50 Z"/>
+    </clipPath>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a237e" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#1a237e" stop-opacity="0.03"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Shield background -->
+  <path d="M200 20 C200 20 340 50 340 50 C340 50 340 220 340 220 C340 300 200 380 200 380 C200 380 60 300 60 300 C60 220 60 50 60 50 Z" fill="url(#shieldGrad)" stroke="#1565C0" stroke-width="4"/>
+
+  <!-- Inner shield border -->
+  <path d="M200 35 C200 35 325 60 325 60 C325 60 325 215 325 215 C325 290 200 365 200 365 C200 365 75 290 75 290 C75 215 75 60 75 60 Z" fill="none" stroke="#1976D2" stroke-width="1.5" stroke-opacity="0.4"/>
+
+  <!-- Colored blocks pattern from logo - arranged within shield -->
+
+  <!-- Top section - blue bars -->
+  <rect x="170" y="65" width="25" height="55" rx="3" fill="#2196F3"/>
+  <rect x="200" y="55" width="25" height="70" rx="3" fill="#1E88E5"/>
+  <rect x="235" y="70" width="18" height="18" rx="2" fill="#1A237E"/>
+
+  <!-- Purple square left -->
+  <rect x="120" y="110" width="18" height="18" rx="2" fill="#9C27B0"/>
+
+  <!-- Blue bar left of center -->
+  <rect x="143" y="100" width="25" height="55" rx="3" fill="#1565C0"/>
+
+  <!-- Orange horizontal bar -->
+  <rect x="185" y="118" width="120" height="22" rx="3" fill="#F4511E"/>
+
+  <!-- Purple square far left -->
+  <rect x="88" y="160" width="22" height="22" rx="3" fill="#9C27B0"/>
+
+  <!-- Dark blue tall bar -->
+  <rect x="118" y="155" width="28" height="60" rx="3" fill="#1A237E"/>
+
+  <!-- Purple block center-left -->
+  <rect x="155" y="158" width="50" height="25" rx="3" fill="#9C27B0"/>
+
+  <!-- Green tall block -->
+  <rect x="215" y="148" width="35" height="65" rx="3" fill="#4CAF50"/>
+
+  <!-- Orange block right -->
+  <rect x="260" y="155" width="55" height="22" rx="3" fill="#F4511E"/>
+
+  <!-- Green small square -->
+  <rect x="258" y="195" width="18" height="18" rx="2" fill="#4CAF50"/>
+
+  <!-- Blue bars bottom center -->
+  <rect x="155" y="195" width="25" height="60" rx="3" fill="#2196F3"/>
+  <rect x="185" y="190" width="25" height="75" rx="3" fill="#1E88E5"/>
+
+  <!-- Orange small square bottom -->
+  <rect x="220" y="235" width="20" height="20" rx="3" fill="#F4511E"/>
+
+  <!-- Bottom blue bar -->
+  <rect x="185" y="275" width="25" height="50" rx="3" fill="#1E88E5"/>
+
+  <!-- Checkmark overlay at bottom of shield -->
+  <path d="M175 310 L195 330 L230 290" fill="none" stroke="#4CAF50" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+</svg>

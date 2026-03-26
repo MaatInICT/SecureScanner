@@ -1,0 +1,163 @@
+{
+  "name": "securescanner",
+  "displayName": "SecureScanner",
+  "description": "Scan your codebase for security vulnerabilities, credentials, OWASP Top 10, and misconfigurations",
+  "version": "0.1.3",
+  "publisher": "MaatInICT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "icon": "media/SecureScannerLogo.png",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaatInICT/SecureScanner"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "security",
+    "vulnerability",
+    "owasp",
+    "credentials",
+    "scanner"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "secureScanner.scanFile",
+        "title": "Scan Current File for Security Issues",
+        "category": "SecureScanner",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "secureScanner.scanWorkspace",
+        "title": "Scan Workspace for Security Issues",
+        "category": "SecureScanner",
+        "icon": "$(search)"
+      },
+      {
+        "command": "secureScanner.openDashboard",
+        "title": "Open Security Dashboard",
+        "category": "SecureScanner",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "secureScanner.clearFindings",
+        "title": "Clear All Findings",
+        "category": "SecureScanner"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "secureScanner",
+          "title": "SecureScanner",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "views": {
+      "secureScanner": [
+        {
+          "id": "secureScanner.findings",
+          "name": "Security Findings"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "SecureScanner",
+      "properties": {
+        "secureScanner.enableOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files when saved"
+        },
+        "secureScanner.enableOnOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files when opened"
+        },
+        "secureScanner.severityThreshold": {
+          "type": "string",
+          "default": "Low",
+          "enum": [
+            "Critical",
+            "High",
+            "Medium",
+            "Low",
+            "Info"
+          ],
+          "description": "Minimum severity level to report"
+        },
+        "secureScanner.ignorePaths": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/.git/**",
+            "**/out/**",
+            "**/build/**"
+          ],
+          "description": "Glob patterns for paths to ignore"
+        },
+        "secureScanner.enabledCategories": {
+          "type": "array",
+          "default": [
+            "credential",
+            "owasp",
+            "dependency",
+            "misconfiguration",
+            "filehygiene"
+          ],
+          "description": "Which scanner categories to enable"
+        },
+        "secureScanner.maxFileSizeKB": {
+          "type": "number",
+          "default": 512,
+          "description": "Maximum file size to scan (in KB)"
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "secureScanner.scanFile",
+          "group": "secureScanner"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "secureScanner.scanFile",
+          "group": "secureScanner"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/suite/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "esbuild": "^0.27.4",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "semver": "^7.5.0"
+  }
+}
