@@ -7,6 +7,8 @@ export interface IgnorePatternRule {
   description: string;
   severity: Severity;
   cweId: string;
+  /** Glob pattern(s) to check whether matching files exist in the workspace. */
+  fileGlobs?: string[];
 }
 
 /**
@@ -104,41 +106,46 @@ export const aiignoreRequiredPatterns: IgnorePatternRule[] = [
     id: 'FH-011',
     pattern: '.env',
     title: 'Missing .env in .aiignore',
-    description: 'Environment files contain secrets that AI tools should not access. Add .env and .env.* to .aiignore.',
-    severity: Severity.High,
+    description: 'Environment files (.env) were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding .env and .env.* to .aiignore.',
+    severity: Severity.Info,
     cweId: 'CWE-540',
+    fileGlobs: ['**/.env', '**/.env.*'],
   },
   {
     id: 'FH-012',
     pattern: '*.pem',
     title: 'Missing *.pem in .aiignore',
-    description: 'Certificate/key files should not be accessible to AI tools. Add *.pem to .aiignore.',
-    severity: Severity.Medium,
+    description: 'PEM certificate/key files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding *.pem to .aiignore.',
+    severity: Severity.Info,
     cweId: 'CWE-321',
+    fileGlobs: ['**/*.pem'],
   },
   {
     id: 'FH-013',
     pattern: '*.key',
     title: 'Missing *.key in .aiignore',
-    description: 'Key files should not be accessible to AI tools. Add *.key to .aiignore.',
-    severity: Severity.Medium,
+    description: 'Key files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding *.key to .aiignore.',
+    severity: Severity.Info,
     cweId: 'CWE-321',
+    fileGlobs: ['**/*.key'],
   },
   {
     id: 'FH-014',
     pattern: 'credentials.json',
     title: 'Missing credentials.json in .aiignore',
-    description: 'Credential files should not be accessible to AI tools. Add credentials.json to .aiignore.',
-    severity: Severity.High,
+    description: 'Credential files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding credentials.json to .aiignore.',
+    severity: Severity.Info,
     cweId: 'CWE-540',
+    fileGlobs: ['**/credentials.json', '**/serviceAccountKey.json'],
   },
   {
     id: 'FH-015',
     pattern: 'id_rsa',
     title: 'Missing SSH keys in .aiignore',
-    description: 'SSH private keys should not be accessible to AI tools. Add id_rsa* to .aiignore.',
-    severity: Severity.High,
+    description: 'SSH private key files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding id_rsa* to .aiignore.',
+    severity: Severity.Info,
     cweId: 'CWE-321',
+    fileGlobs: ['**/id_rsa', '**/id_rsa.*', '**/id_ed25519', '**/id_ed25519.*'],
   },
 ];
 

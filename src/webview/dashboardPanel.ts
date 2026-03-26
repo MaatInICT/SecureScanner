@@ -118,10 +118,10 @@ export class DashboardPanel {
     );
   }
 
-  private scanCurrentFile(): void {
+  private async scanCurrentFile(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (editor) {
-      const findings = this.engine.scanDocument(editor.document);
+      const findings = await this.engine.scanDocument(editor.document);
       this.panel.webview.postMessage({ type: 'scanStatus', status: 'done', count: findings.length });
       this.refresh();
     } else {

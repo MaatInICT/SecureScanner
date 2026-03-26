@@ -1,5 +1,252 @@
-import { Finding, FindingLocation } from '../types/finding';
+import { Finding, FindingLocation, Severity } from '../types/finding';
 import { IScannerRule, ScanContext } from '../types/scanner';
+
+/**
+ * Identifies all comment and docstring ranges in a file based on the language.
+ * Returns an array of [start, end] character offset pairs.
+ */
+function buildCommentRanges(content: string, languageId: string): [number, number][] {
+  const ranges: [number, number][] = [];
+
+  // Single-line comment tokens per language family
+  const singleLineTokens = getSingleLineCommentTokens(languageId);
+  // Multi-line comment delimiters per language family
+  const multiLineDelimiters = getMultiLineCommentDelimiters(languageId);
+  // Docstring delimiters (Python)
+  const docstringDelimiters = getDocstringDelimiters(languageId);
+
+  let i = 0;
+  while (i < content.length) {
+    // Check for string literals first (skip them to avoid false positives)
+    if (content[i] === '"' && content[i + 1] !== '"' || content[i] === "'" && content[i + 1] !== "'") {
+      // Check it's not a docstring delimiter before skipping as string
+      let isDocstring = false;
+      for (const delim of docstringDelimiters) {
+        if (content.substring(i, i + delim.length) === delim) {
+          isDocstring = true;
+          break;
+        }
+      }
+      if (!isDocstring) {
+        const quote = content[i];
+        i++;
+        while (i < content.length && content[i] !== quote) {
+          if (content[i] === '\\') { i++; } // skip escaped char
+          i++;
+        }
+        i++; // skip closing quote
+        continue;
+      }
+    }
+
+    // Check docstring delimiters (""" or ''') — must check before single-line
+    let matchedDocstring = false;
+    for (const delim of docstringDelimiters) {
+      if (content.substring(i, i + delim.length) === delim) {
+        const start = i;
+        i += delim.length;
+        const endIdx = content.indexOf(delim, i);
+        if (endIdx !== -1) {
+          i = endIdx + delim.length;
+        } else {
+          i = content.length;
+        }
+        ranges.push([start, i]);
+        matchedDocstring = true;
+        break;
+      }
+    }
+    if (matchedDocstring) { continue; }
+
+    // Check multi-line comment delimiters (/* */, <!-- -->, --[[ ]])
+    let matchedMulti = false;
+    for (const [open, close] of multiLineDelimiters) {
+      if (content.substring(i, i + open.length) === open) {
+        const start = i;
+        i += open.length;
+        const endIdx = content.indexOf(close, i);
+        if (endIdx !== -1) {
+          i = endIdx + close.length;
+        } else {
+          i = content.length;
+        }
+        ranges.push([start, i]);
+        matchedMulti = true;
+        break;
+      }
+    }
+    if (matchedMulti) { continue; }
+
+    // Check single-line comment tokens (//, #, --, %, ;, ')
+    let matchedSingle = false;
+    for (const token of singleLineTokens) {
+      if (content.substring(i, i + token.length) === token) {
+        const start = i;
+        const newlineIdx = content.indexOf('\n', i);
+        i = newlineIdx !== -1 ? newlineIdx + 1 : content.length;
+        ranges.push([start, i]);
+        matchedSingle = true;
+        break;
+      }
+    }
+    if (matchedSingle) { continue; }
+
+    i++;
+  }
+
+  return ranges;
+}
+
+function getSingleLineCommentTokens(languageId: string): string[] {
+  switch (languageId) {
+    case 'javascript':
+    case 'typescript':
+    case 'javascriptreact':
+    case 'typescriptreact':
+    case 'java':
+    case 'c':
+    case 'cpp':
+    case 'csharp':
+    case 'go':
+    case 'rust':
+    case 'swift':
+    case 'kotlin':
+    case 'scala':
+    case 'dart':
+    case 'groovy':
+    case 'php':
+      return ['//'];
+    case 'python':
+    case 'ruby':
+    case 'shellscript':
+    case 'bash':
+    case 'zsh':
+    case 'sh':
+    case 'perl':
+    case 'r':
+    case 'yaml':
+    case 'yml':
+    case 'dockerfile':
+    case 'makefile':
+    case 'coffeescript':
+    case 'powershell':
+    case 'robot':
+    case 'robotframework':
+      return ['#'];
+    case 'sql':
+    case 'plsql':
+    case 'hql':
+      return ['--'];
+    case 'lua':
+      return ['--'];
+    case 'matlab':
+    case 'latex':
+    case 'tex':
+    case 'erlang':
+      return ['%'];
+    case 'vb':
+    case 'vba':
+    case 'vbscript':
+      return ["'"];
+    case 'clojure':
+    case 'lisp':
+    case 'scheme':
+    case 'ini':
+    case 'properties':
+      return [';'];
+    default:
+      // Support the most common tokens as fallback
+      return ['//', '#', '--'];
+  }
+}
+
+function getMultiLineCommentDelimiters(languageId: string): [string, string][] {
+  switch (languageId) {
+    case 'javascript':
+    case 'typescript':
+    case 'javascriptreact':
+    case 'typescriptreact':
+    case 'java':
+    case 'c':
+    case 'cpp':
+    case 'csharp':
+    case 'go':
+    case 'rust':
+    case 'swift':
+    case 'kotlin':
+    case 'scala':
+    case 'dart':
+    case 'groovy':
+    case 'php':
+    case 'css':
+    case 'scss':
+    case 'less':
+      return [['/*', '*/']];
+    case 'sql':
+    case 'plsql':
+    case 'hql':
+      return [['/*', '*/']];
+    case 'html':
+    case 'xml':
+    case 'svg':
+    case 'xhtml':
+    case 'vue':
+    case 'svelte':
+      return [['<!--', '-->']];
+    case 'lua':
+      return [['--[[', ']]']];
+    case 'haskell':
+      return [['{-', '-}']];
+    case 'robot':
+    case 'robotframework':
+      return [['***Comments***', '***'], ['*** Comments ***', '***']];
+    default:
+      return [['/*', '*/'], ['<!--', '-->']];
+  }
+}
+
+function getDocstringDelimiters(languageId: string): string[] {
+  switch (languageId) {
+    case 'python':
+      return ['"""', "'''"];
+    default:
+      return [];
+  }
+}
+
+/**
+ * Check if a file is a documentation file based on its extension or name.
+ */
+const DOCUMENTATION_EXTENSIONS = ['.md', '.rst', '.txt', '.adoc', '.asciidoc', '.rdoc', '.wiki', '.tex', '.rtf'];
+const DOCUMENTATION_NAMES = ['readme', 'changelog', 'contributing', 'license', 'authors', 'history', 'news', 'todo', 'faq'];
+
+function isDocumentationFile(filePath: string): boolean {
+  const fileName = filePath.split(/[/\\]/).pop()?.toLowerCase() || '';
+  const ext = fileName.substring(fileName.lastIndexOf('.'));
+
+  if (DOCUMENTATION_EXTENSIONS.includes(ext)) {
+    return true;
+  }
+
+  // Check common documentation filenames without extension (e.g. README, LICENSE)
+  const baseName = fileName.replace(/\.[^.]+$/, '');
+  return DOCUMENTATION_NAMES.includes(baseName);
+}
+
+/**
+ * Check if a character offset falls within any of the comment/docstring ranges.
+ */
+function isInComment(offset: number, commentRanges: [number, number][]): boolean {
+  for (const [start, end] of commentRanges) {
+    if (offset >= start && offset < end) {
+      return true;
+    }
+    if (start > offset) {
+      break; // ranges are ordered, no need to check further
+    }
+  }
+  return false;
+}
 
 /**
  * Build a line offset index for fast offset-to-line/column conversion.
@@ -38,7 +285,8 @@ function offsetToPosition(offset: number, lineOffsets: number[]): { line: number
 function executeRule(
   rule: IScannerRule,
   context: ScanContext,
-  lineOffsets: number[]
+  lineOffsets: number[],
+  commentRanges: [number, number][]
 ): Finding[] {
   const findings: Finding[] = [];
 
@@ -97,12 +345,29 @@ function executeRule(
       matchedText = matchedText.substring(0, 4) + '****' + matchedText.substring(matchedText.length - 4);
     }
 
+    // Lower severity for matches in documentation files, comments, or docstrings
+    const inDocFile = isDocumentationFile(context.filePath);
+    const inComment = !inDocFile && isInComment(match.index, commentRanges);
+    let severity = rule.severity;
+    let title = rule.title;
+    let description = rule.description;
+
+    if (inDocFile) {
+      severity = Severity.Info;
+      title = `${rule.title} (in documentation)`;
+      description = `${rule.description} Note: this match was found in a documentation file, not in executable code.`;
+    } else if (inComment) {
+      severity = Severity.Low;
+      title = `${rule.title} (in comment/docstring)`;
+      description = `${rule.description} Note: this match was found in a comment or docstring, not in executable code.`;
+    }
+
     findings.push({
       id: rule.id,
       category: rule.category,
-      severity: rule.severity,
-      title: rule.title,
-      description: rule.description,
+      severity,
+      title,
+      description,
       location,
       matchedText,
       cweId: rule.cweId,
@@ -123,11 +388,12 @@ function executeRule(
  */
 export function runRules(rules: IScannerRule[], context: ScanContext): Finding[] {
   const lineOffsets = buildLineOffsets(context.content);
+  const commentRanges = buildCommentRanges(context.content, context.languageId);
   const findings: Finding[] = [];
 
   for (const rule of rules) {
     try {
-      const ruleFindings = executeRule(rule, context, lineOffsets);
+      const ruleFindings = executeRule(rule, context, lineOffsets, commentRanges);
       findings.push(...ruleFindings);
     } catch {
       // Skip rules that error (e.g., invalid regex)

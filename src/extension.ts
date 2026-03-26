@@ -49,7 +49,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Debounced scan function
   const debouncedScan = debounce((document: vscode.TextDocument) => {
-    engine.scanDocument(document);
+    void engine.scanDocument(document);
   }, 300);
 
   // Auto-scan on save
@@ -86,10 +86,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Commands
   context.subscriptions.push(
-    vscode.commands.registerCommand('secureScanner.scanFile', () => {
+    vscode.commands.registerCommand('secureScanner.scanFile', async () => {
       const editor = vscode.window.activeTextEditor;
       if (editor) {
-        const findings = engine.scanDocument(editor.document);
+        const findings = await engine.scanDocument(editor.document);
         vscode.window.showInformationMessage(
           `SecureScanner: Found ${findings.length} issue(s) in ${editor.document.fileName.split(/[/\\]/).pop()}`
         );
@@ -158,7 +158,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Scan currently open files on activation
   if (vscode.window.activeTextEditor) {
-    engine.scanDocument(vscode.window.activeTextEditor.document);
+    void engine.scanDocument(vscode.window.activeTextEditor.document);
   }
 
   // Auto-scan workspace on activation (runs in background)

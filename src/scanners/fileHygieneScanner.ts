@@ -12,7 +12,7 @@ import {
 export class FileHygieneScanner implements IScanner {
   readonly name = 'FileHygieneScanner';
 
-  scan(context: ScanContext): Finding[] {
+  async scan(context: ScanContext): Promise<Finding[]> {
     const fileName = context.filePath.split(/[/\\]/).pop() || '';
 
     if (fileName === '.gitignore') {
@@ -148,31 +148,52 @@ export class FileHygieneScanner implements IScanner {
     return findings;
   }
 
-  private scanAiignore(context: ScanContext): Finding[] {
+  private async scanAiignore(context: ScanContext): Promise<Finding[]> {
     const findings: Finding[] = [];
     const content = context.content;
 
     for (const rule of aiignoreRequiredPatterns) {
-      if (!this.isPatternCovered(rule.pattern, content)) {
-        const lines = content.split('\n');
-        const lastNonEmptyLine = this.findLastNonEmptyLine(lines);
-
-        findings.push({
-          id: rule.id,
-          category: FindingCategory.FileHygiene,
-          severity: rule.severity,
-          title: rule.title,
-          description: rule.description,
-          location: {
-            filePath: context.filePath,
-            startLine: lastNonEmptyLine,
-            startColumn: 0,
-            endLine: lastNonEmptyLine,
-            endColumn: lines[lastNonEmptyLine]?.length || 0,
-          },
-          cweId: rule.cweId,
-        });
+      if (this.isPatternCovered(rule.pattern, content)) {
+        continue;
       }
+
+      // Only report if matching files actually exist in the workspace
+      if (rule.fileGlobs && rule.fileGlobs.length > 0) {
+        let filesExist = false;
+        for (const glob of rule.fileGlobs) {
+          try {
+            const files = await vscode.workspace.findFiles(glob, '**/node_modules/**', 1);
+            if (files.length > 0) {
+              filesExist = true;
+              break;
+            }
+          } catch {
+            // Skip if file search fails
+          }
+        }
+        if (!filesExist) {
+          continue;
+        }
+      }
+
+      const lines = content.split('\n');
+      const lastNonEmptyLine = this.findLastNonEmptyLine(lines);
+
+      findings.push({
+        id: rule.id,
+        category: FindingCategory.FileHygiene,
+        severity: rule.severity,
+        title: rule.title,
+        description: rule.description,
+        location: {
+          filePath: context.filePath,
+          startLine: lastNonEmptyLine,
+          startColumn: 0,
+          endLine: lastNonEmptyLine,
+          endColumn: lines[lastNonEmptyLine]?.length || 0,
+        },
+        cweId: rule.cweId,
+      });
     }
 
     return findings;
