@@ -4295,7 +4295,7 @@ var DashboardPanel = class _DashboardPanel {
     <img src="${logoUri}" alt="MaatInICT" />
     <div class="branding-text">
       <span class="branding-title">&#128737; SecureScanner</span>
-      <span class="branding-sub">Powered by MaatInICT &mdash; Quality Engineering &amp; Identity Expertise</span>
+      <span class="branding-sub">Powered by MaatInICT B.V. &mdash; Quality Engineering &amp; Identity Expertise</span>
     </div>
   </div>
   <h1>Security Dashboard</h1>
@@ -4333,14 +4333,14 @@ var DashboardPanel = class _DashboardPanel {
 
   <div class="disclaimer">
     <strong>Disclaimer</strong><br>
-    SecureScanner is a free tool provided by <strong>MaatInICT</strong> on an "as is" basis, without warranties or guarantees of any kind, either express or implied.
+    SecureScanner is a free tool provided by <strong>MaatInICT B.V.</strong> on an "as is" basis, without warranties or guarantees of any kind, either express or implied.
     This tool is intended to assist in identifying potential security issues in your codebase, but it does not guarantee the detection of all vulnerabilities nor the absence of false positives.
     By using SecureScanner, you acknowledge and agree that:<br><br>
     &bull; You use this tool entirely at your own risk and responsibility.<br>
-    &bull; MaatInICT shall not be held liable for any damages, losses, security breaches, or other consequences arising from the use of, or reliance on, this tool.<br>
+    &bull; MaatInICT B.V. shall not be held liable for any damages, losses, security breaches, or other consequences arising from the use of, or reliance on, this tool.<br>
     &bull; This tool does not replace professional security audits, penetration testing, or expert review.<br>
     &bull; Scan results should be validated and verified by qualified personnel before taking action.<br><br>
-    &copy; MaatInICT &mdash; Quality Engineering &amp; Identity Expertise
+    &copy; MaatInICT B.V. &mdash; Quality Engineering &amp; Identity Expertise
   </div>
 
   <script nonce="${nonce}">

@@ -1,6 +1,6 @@
 # SecureScanner
 
-**By MaatInICT — Quality Engineering & Identity Expertise**
+**By MaatInICT B.V. — Quality Engineering & Identity Expertise**
 
 SecureScanner is a free Visual Studio Code extension that scans your open workspace for security vulnerabilities, hardcoded credentials, insecure coding patterns, and misconfigurations — all without leaving your editor.
 
@@ -57,8 +57,8 @@ JavaScript, TypeScript, Python, Java, PHP, and framework-specific patterns (Reac
 
 ## Disclaimer
 
-SecureScanner is provided free of charge by MaatInICT on an "as is" basis, without warranties of any kind. Use of this tool is entirely at your own risk. MaatInICT shall not be held liable for any damages or consequences arising from its use. This tool does not replace professional security audits or penetration testing.
+SecureScanner is provided free of charge by MaatInICT B.V. on an "as is" basis, without warranties of any kind. Use of this tool is entirely at your own risk. MaatInICT B.V. shall not be held liable for any damages or consequences arising from its use. This tool does not replace professional security audits or penetration testing.
 
 ---
 
-&copy; MaatInICT — Quality Engineering & Identity Expertise
+&copy; MaatInICT B.V. — Quality Engineering & Identity Expertise

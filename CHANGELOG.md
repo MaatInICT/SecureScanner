@@ -2,13 +2,14 @@
 
 All notable changes to SecureScanner will be documented in this file.
 
-## [0.1.3] - 2026-03-26
-
-### Added
-- Extension icon (SecureScannerLogo.png) for marketplace and sidebar visibility
+## [1.0.0] - 2026-03-26
 
 ### Changed
-- Version bump to 0.1.3
+- Official v1.0.0 release
+- Updated all branding to MaatInICT B.V.
+- Added extension icon (SecureScannerLogo.png) for marketplace and sidebar
+- Added MIT license
+- Added GitHub repository link
 
 ## [0.1.2] - 2026-03-26
 

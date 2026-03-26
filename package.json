@@ -2,7 +2,7 @@
   "name": "securescanner",
   "displayName": "SecureScanner",
   "description": "Scan your codebase for security vulnerabilities, credentials, OWASP Top 10, and misconfigurations",
-  "version": "0.1.3",
+  "version": "1.0.0",
   "publisher": "MaatInICT",
   "engines": {
     "vscode": "^1.85.0"
