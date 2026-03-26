@@ -15,7 +15,7 @@ export class FileHygieneScanner implements IScanner {
   async scan(context: ScanContext): Promise<Finding[]> {
     const fileName = context.filePath.split(/[/\\]/).pop() || '';
 
-    if (fileName === '.gitignore') {
+    if (fileName === '.gitignore' && context.isGitProject !== false) {
       return this.scanGitignore(context);
     }
     if (fileName === '.aiignore') {
@@ -30,30 +30,74 @@ export class FileHygieneScanner implements IScanner {
    * from file content alone (missing files, unignored sensitive files).
    * Called separately from the normal per-file scan.
    */
-  async scanWorkspace(workspaceRoot: string): Promise<Finding[]> {
+  async scanWorkspace(workspaceRoot: string, isGitProject: boolean = true): Promise<Finding[]> {
     const findings: Finding[] = [];
 
-    // Check if .gitignore exists
-    const gitignorePath = path.join(workspaceRoot, '.gitignore');
-    if (!fs.existsSync(gitignorePath)) {
-      findings.push({
-        id: 'FH-100',
-        category: FindingCategory.FileHygiene,
-        severity: Severity.High,
-        title: 'Missing .gitignore file',
-        description: 'No .gitignore file found in the workspace root. Without a .gitignore, sensitive files like .env, private keys, and credentials may be accidentally committed to version control.',
-        location: {
-          filePath: workspaceRoot,
-          startLine: 0,
-          startColumn: 0,
-          endLine: 0,
-          endColumn: 0,
-        },
-        cweId: 'CWE-540',
-      });
+    // Git-related checks: only run when the project is under version control
+    if (isGitProject) {
+      // Check if .gitignore exists
+      const gitignorePath = path.join(workspaceRoot, '.gitignore');
+      if (!fs.existsSync(gitignorePath)) {
+        findings.push({
+          id: 'FH-100',
+          category: FindingCategory.FileHygiene,
+          severity: Severity.High,
+          title: 'Missing .gitignore file',
+          description: 'No .gitignore file found in the workspace root. Without a .gitignore, sensitive files like .env, private keys, and credentials may be accidentally committed to version control.',
+          location: {
+            filePath: workspaceRoot,
+            startLine: 0,
+            startColumn: 0,
+            endLine: 0,
+            endColumn: 0,
+          },
+          cweId: 'CWE-540',
+        });
+      }
+
+      // Check for sensitive files that exist but are not gitignored
+      const gitignoreContent = fs.existsSync(gitignorePath)
+        ? fs.readFileSync(gitignorePath, 'utf8')
+        : '';
+
+      for (const sensitiveFile of sensitiveFilePatterns) {
+        // Check if the sensitive pattern is covered by .gitignore
+        if (this.isPatternCovered(sensitiveFile.glob, gitignoreContent)) {
+          continue;
+        }
+
+        // Search for matching files in the workspace
+        try {
+          const files = await vscode.workspace.findFiles(
+            sensitiveFile.glob,
+            '**/node_modules/**',
+            5
+          );
+
+          for (const file of files) {
+            findings.push({
+              id: sensitiveFile.ruleId,
+              category: FindingCategory.FileHygiene,
+              severity: sensitiveFile.severity,
+              title: sensitiveFile.title,
+              description: sensitiveFile.description,
+              location: {
+                filePath: file.fsPath,
+                startLine: 0,
+                startColumn: 0,
+                endLine: 0,
+                endColumn: 0,
+              },
+              cweId: sensitiveFile.cweId,
+            });
+          }
+        } catch {
+          // Skip if file search fails
+        }
+      }
     }
 
-    // Check if .aiignore exists
+    // .aiignore check: always relevant (even for local projects, AI tools can still access files)
     const aiignorePath = path.join(workspaceRoot, '.aiignore');
     if (!fs.existsSync(aiignorePath)) {
       findings.push({
@@ -71,47 +115,6 @@ export class FileHygieneScanner implements IScanner {
         },
         cweId: 'CWE-540',
       });
-    }
-
-    // Check for sensitive files that exist but are not gitignored
-    const gitignoreContent = fs.existsSync(gitignorePath)
-      ? fs.readFileSync(gitignorePath, 'utf8')
-      : '';
-
-    for (const sensitiveFile of sensitiveFilePatterns) {
-      // Check if the sensitive pattern is covered by .gitignore
-      if (this.isPatternCovered(sensitiveFile.glob, gitignoreContent)) {
-        continue;
-      }
-
-      // Search for matching files in the workspace
-      try {
-        const files = await vscode.workspace.findFiles(
-          sensitiveFile.glob,
-          '**/node_modules/**',
-          5
-        );
-
-        for (const file of files) {
-          findings.push({
-            id: sensitiveFile.ruleId,
-            category: FindingCategory.FileHygiene,
-            severity: sensitiveFile.severity,
-            title: sensitiveFile.title,
-            description: sensitiveFile.description,
-            location: {
-              filePath: file.fsPath,
-              startLine: 0,
-              startColumn: 0,
-              endLine: 0,
-              endColumn: 0,
-            },
-            cweId: sensitiveFile.cweId,
-          });
-        }
-      } catch {
-        // Skip if file search fails
-      }
     }
 
     return findings;

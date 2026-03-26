@@ -17,6 +17,7 @@ export interface ScanContext {
   filePath: string;
   content: string;
   languageId: string;
+  isGitProject?: boolean;
 }
 
 export interface IScanner {

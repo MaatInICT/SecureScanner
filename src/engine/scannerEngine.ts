@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import * as fs from 'fs';
 import { Finding, FindingCategory, Severity } from '../types/finding';
 import { ScanContext } from '../types/scanner';
-import { SecureScannerConfig } from '../types/config';
+import { SecureScannerConfig, ProjectType } from '../types/config';
 import { ScannerRegistry } from './scannerRegistry';
 import { CredentialScanner } from '../scanners/credentialScanner';
 import { OwaspScanner } from '../scanners/owaspScanner';
@@ -71,6 +72,7 @@ export class ScannerEngine {
         FindingCategory.FileHygiene,
       ]),
       maxFileSizeKB: config.get<number>('maxFileSizeKB', 512),
+      projectType: config.get<ProjectType>('projectType', 'auto'),
     };
   }
 
@@ -92,10 +94,18 @@ export class ScannerEngine {
       }
     }
 
+    // Resolve project type for git-aware scanning
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+    const workspaceRoot = workspaceFolder?.uri.fsPath || '';
+    const isGitProject = workspaceRoot
+      ? this.resolveIsGitProject(config.projectType, workspaceRoot)
+      : true; // default to git when no workspace
+
     const context: ScanContext = {
       filePath,
       content,
       languageId: document.languageId,
+      isGitProject,
     };
 
     const findings: Finding[] = [];
@@ -122,6 +132,7 @@ export class ScannerEngine {
   }
 
   async scanWorkspace(): Promise<Finding[]> {
+    this.findingsMap.clear();
     const allFindings: Finding[] = [];
     const config = this.getConfig();
 
@@ -150,13 +161,13 @@ export class ScannerEngine {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (workspaceFolders) {
         for (const folder of workspaceFolders) {
-          const hygieneFindings = await this.fileHygieneScanner.scanWorkspace(folder.uri.fsPath);
+          const isGit = this.resolveIsGitProject(config.projectType, folder.uri.fsPath);
+          const hygieneFindings = await this.fileHygieneScanner.scanWorkspace(folder.uri.fsPath, isGit);
           const filtered = hygieneFindings.filter(f => f.severity <= config.severityThreshold);
           allFindings.push(...filtered);
 
           // Store workspace-level findings under the workspace root path
-          const existing = this.findingsMap.get(folder.uri.fsPath) || [];
-          this.findingsMap.set(folder.uri.fsPath, [...existing, ...filtered]);
+          this.findingsMap.set(folder.uri.fsPath, filtered);
         }
         this._onFindingsChanged.fire(this.findingsMap);
       }
@@ -172,6 +183,21 @@ export class ScannerEngine {
   clearFindings(): void {
     this.findingsMap.clear();
     this._onFindingsChanged.fire(this.findingsMap);
+  }
+
+  /**
+   * Resolve whether this is a git project based on the projectType setting.
+   * 'auto' checks for the existence of a .git folder in the workspace root.
+   */
+  private resolveIsGitProject(projectType: ProjectType, workspaceRoot: string): boolean {
+    if (projectType === 'git') {
+      return true;
+    }
+    if (projectType === 'local') {
+      return false;
+    }
+    // auto: check if .git directory exists
+    return fs.existsSync(path.join(workspaceRoot, '.git'));
   }
 
   dispose(): void {
