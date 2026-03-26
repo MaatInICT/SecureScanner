@@ -76,7 +76,7 @@ export class ScannerEngine {
     };
   }
 
-  scanDocument(document: vscode.TextDocument): Finding[] {
+  async scanDocument(document: vscode.TextDocument): Promise<Finding[]> {
     const config = this.getConfig();
     const filePath = document.uri.fsPath;
 
@@ -113,7 +113,7 @@ export class ScannerEngine {
 
     for (const scanner of scanners) {
       // Check if category is enabled
-      const scannerFindings = scanner.scan(context);
+      const scannerFindings = await scanner.scan(context);
       const filtered = scannerFindings.filter(f => {
         if (!config.enabledCategories.includes(f.category)) {
           return false;
@@ -149,7 +149,7 @@ export class ScannerEngine {
     for (const file of files) {
       try {
         const document = await vscode.workspace.openTextDocument(file);
-        const findings = this.scanDocument(document);
+        const findings = await this.scanDocument(document);
         allFindings.push(...findings);
       } catch {
         // Skip files that can't be opened (binary, etc.)

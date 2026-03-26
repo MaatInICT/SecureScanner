@@ -22,5 +22,5 @@ export interface ScanContext {
 
 export interface IScanner {
   readonly name: string;
-  scan(context: ScanContext): Finding[];
+  scan(context: ScanContext): Finding[] | Promise<Finding[]>;
 }

@@ -2003,6 +2003,225 @@ var ScannerRegistry = class {
 };
 
 // src/engine/ruleEngine.ts
+function buildCommentRanges(content, languageId) {
+  const ranges = [];
+  const singleLineTokens = getSingleLineCommentTokens(languageId);
+  const multiLineDelimiters = getMultiLineCommentDelimiters(languageId);
+  const docstringDelimiters = getDocstringDelimiters(languageId);
+  let i = 0;
+  while (i < content.length) {
+    if (content[i] === '"' && content[i + 1] !== '"' || content[i] === "'" && content[i + 1] !== "'") {
+      let isDocstring = false;
+      for (const delim of docstringDelimiters) {
+        if (content.substring(i, i + delim.length) === delim) {
+          isDocstring = true;
+          break;
+        }
+      }
+      if (!isDocstring) {
+        const quote = content[i];
+        i++;
+        while (i < content.length && content[i] !== quote) {
+          if (content[i] === "\\") {
+            i++;
+          }
+          i++;
+        }
+        i++;
+        continue;
+      }
+    }
+    let matchedDocstring = false;
+    for (const delim of docstringDelimiters) {
+      if (content.substring(i, i + delim.length) === delim) {
+        const start = i;
+        i += delim.length;
+        const endIdx = content.indexOf(delim, i);
+        if (endIdx !== -1) {
+          i = endIdx + delim.length;
+        } else {
+          i = content.length;
+        }
+        ranges.push([start, i]);
+        matchedDocstring = true;
+        break;
+      }
+    }
+    if (matchedDocstring) {
+      continue;
+    }
+    let matchedMulti = false;
+    for (const [open, close] of multiLineDelimiters) {
+      if (content.substring(i, i + open.length) === open) {
+        const start = i;
+        i += open.length;
+        const endIdx = content.indexOf(close, i);
+        if (endIdx !== -1) {
+          i = endIdx + close.length;
+        } else {
+          i = content.length;
+        }
+        ranges.push([start, i]);
+        matchedMulti = true;
+        break;
+      }
+    }
+    if (matchedMulti) {
+      continue;
+    }
+    let matchedSingle = false;
+    for (const token of singleLineTokens) {
+      if (content.substring(i, i + token.length) === token) {
+        const start = i;
+        const newlineIdx = content.indexOf("\n", i);
+        i = newlineIdx !== -1 ? newlineIdx + 1 : content.length;
+        ranges.push([start, i]);
+        matchedSingle = true;
+        break;
+      }
+    }
+    if (matchedSingle) {
+      continue;
+    }
+    i++;
+  }
+  return ranges;
+}
+function getSingleLineCommentTokens(languageId) {
+  switch (languageId) {
+    case "javascript":
+    case "typescript":
+    case "javascriptreact":
+    case "typescriptreact":
+    case "java":
+    case "c":
+    case "cpp":
+    case "csharp":
+    case "go":
+    case "rust":
+    case "swift":
+    case "kotlin":
+    case "scala":
+    case "dart":
+    case "groovy":
+    case "php":
+      return ["//"];
+    case "python":
+    case "ruby":
+    case "shellscript":
+    case "bash":
+    case "zsh":
+    case "sh":
+    case "perl":
+    case "r":
+    case "yaml":
+    case "yml":
+    case "dockerfile":
+    case "makefile":
+    case "coffeescript":
+    case "powershell":
+    case "robot":
+    case "robotframework":
+      return ["#"];
+    case "sql":
+    case "plsql":
+    case "hql":
+      return ["--"];
+    case "lua":
+      return ["--"];
+    case "matlab":
+    case "latex":
+    case "tex":
+    case "erlang":
+      return ["%"];
+    case "vb":
+    case "vba":
+    case "vbscript":
+      return ["'"];
+    case "clojure":
+    case "lisp":
+    case "scheme":
+    case "ini":
+    case "properties":
+      return [";"];
+    default:
+      return ["//", "#", "--"];
+  }
+}
+function getMultiLineCommentDelimiters(languageId) {
+  switch (languageId) {
+    case "javascript":
+    case "typescript":
+    case "javascriptreact":
+    case "typescriptreact":
+    case "java":
+    case "c":
+    case "cpp":
+    case "csharp":
+    case "go":
+    case "rust":
+    case "swift":
+    case "kotlin":
+    case "scala":
+    case "dart":
+    case "groovy":
+    case "php":
+    case "css":
+    case "scss":
+    case "less":
+      return [["/*", "*/"]];
+    case "sql":
+    case "plsql":
+    case "hql":
+      return [["/*", "*/"]];
+    case "html":
+    case "xml":
+    case "svg":
+    case "xhtml":
+    case "vue":
+    case "svelte":
+      return [["<!--", "-->"]];
+    case "lua":
+      return [["--[[", "]]"]];
+    case "haskell":
+      return [["{-", "-}"]];
+    case "robot":
+    case "robotframework":
+      return [["***Comments***", "***"], ["*** Comments ***", "***"]];
+    default:
+      return [["/*", "*/"], ["<!--", "-->"]];
+  }
+}
+function getDocstringDelimiters(languageId) {
+  switch (languageId) {
+    case "python":
+      return ['"""', "'''"];
+    default:
+      return [];
+  }
+}
+var DOCUMENTATION_EXTENSIONS = [".md", ".rst", ".txt", ".adoc", ".asciidoc", ".rdoc", ".wiki", ".tex", ".rtf"];
+var DOCUMENTATION_NAMES = ["readme", "changelog", "contributing", "license", "authors", "history", "news", "todo", "faq"];
+function isDocumentationFile(filePath) {
+  const fileName = filePath.split(/[/\\]/).pop()?.toLowerCase() || "";
+  const ext = fileName.substring(fileName.lastIndexOf("."));
+  if (DOCUMENTATION_EXTENSIONS.includes(ext)) {
+    return true;
+  }
+  const baseName = fileName.replace(/\.[^.]+$/, "");
+  return DOCUMENTATION_NAMES.includes(baseName);
+}
+function isInComment(offset, commentRanges) {
+  for (const [start, end] of commentRanges) {
+    if (offset >= start && offset < end) {
+      return true;
+    }
+    if (start > offset) {
+      break;
+    }
+  }
+  return false;
+}
 function buildLineOffsets(content) {
   const offsets = [0];
   for (let i = 0; i < content.length; i++) {
@@ -2025,7 +2244,7 @@ function offsetToPosition(offset, lineOffsets) {
   }
   return { line: low, column: offset - lineOffsets[low] };
 }
-function executeRule(rule, context, lineOffsets) {
+function executeRule(rule, context, lineOffsets, commentRanges) {
   const findings = [];
   if (rule.languages && rule.languages.length > 0) {
     if (!rule.languages.includes(context.languageId)) {
@@ -2067,12 +2286,26 @@ function executeRule(rule, context, lineOffsets) {
     if (rule.category === "credential" && matchedText.length > 8) {
       matchedText = matchedText.substring(0, 4) + "****" + matchedText.substring(matchedText.length - 4);
     }
+    const inDocFile = isDocumentationFile(context.filePath);
+    const inComment = !inDocFile && isInComment(match.index, commentRanges);
+    let severity = rule.severity;
+    let title = rule.title;
+    let description = rule.description;
+    if (inDocFile) {
+      severity = 4 /* Info */;
+      title = `${rule.title} (in documentation)`;
+      description = `${rule.description} Note: this match was found in a documentation file, not in executable code.`;
+    } else if (inComment) {
+      severity = 3 /* Low */;
+      title = `${rule.title} (in comment/docstring)`;
+      description = `${rule.description} Note: this match was found in a comment or docstring, not in executable code.`;
+    }
     findings.push({
       id: rule.id,
       category: rule.category,
-      severity: rule.severity,
-      title: rule.title,
-      description: rule.description,
+      severity,
+      title,
+      description,
       location,
       matchedText,
       cweId: rule.cweId,
@@ -2086,10 +2319,11 @@ function executeRule(rule, context, lineOffsets) {
 }
 function runRules(rules, context) {
   const lineOffsets = buildLineOffsets(context.content);
+  const commentRanges = buildCommentRanges(context.content, context.languageId);
   const findings = [];
   for (const rule of rules) {
     try {
-      const ruleFindings = executeRule(rule, context, lineOffsets);
+      const ruleFindings = executeRule(rule, context, lineOffsets, commentRanges);
       findings.push(...ruleFindings);
     } catch {
       console.warn(`SecureScanner: Rule ${rule.id} failed on ${context.filePath}`);
@@ -2898,41 +3132,46 @@ var aiignoreRequiredPatterns = [
     id: "FH-011",
     pattern: ".env",
     title: "Missing .env in .aiignore",
-    description: "Environment files contain secrets that AI tools should not access. Add .env and .env.* to .aiignore.",
-    severity: 1 /* High */,
-    cweId: "CWE-540"
+    description: "Environment files (.env) were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding .env and .env.* to .aiignore.",
+    severity: 4 /* Info */,
+    cweId: "CWE-540",
+    fileGlobs: ["**/.env", "**/.env.*"]
   },
   {
     id: "FH-012",
     pattern: "*.pem",
     title: "Missing *.pem in .aiignore",
-    description: "Certificate/key files should not be accessible to AI tools. Add *.pem to .aiignore.",
-    severity: 2 /* Medium */,
-    cweId: "CWE-321"
+    description: "PEM certificate/key files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding *.pem to .aiignore.",
+    severity: 4 /* Info */,
+    cweId: "CWE-321",
+    fileGlobs: ["**/*.pem"]
   },
   {
     id: "FH-013",
     pattern: "*.key",
     title: "Missing *.key in .aiignore",
-    description: "Key files should not be accessible to AI tools. Add *.key to .aiignore.",
-    severity: 2 /* Medium */,
-    cweId: "CWE-321"
+    description: "Key files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding *.key to .aiignore.",
+    severity: 4 /* Info */,
+    cweId: "CWE-321",
+    fileGlobs: ["**/*.key"]
   },
   {
     id: "FH-014",
     pattern: "credentials.json",
     title: "Missing credentials.json in .aiignore",
-    description: "Credential files should not be accessible to AI tools. Add credentials.json to .aiignore.",
-    severity: 1 /* High */,
-    cweId: "CWE-540"
+    description: "Credential files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding credentials.json to .aiignore.",
+    severity: 4 /* Info */,
+    cweId: "CWE-540",
+    fileGlobs: ["**/credentials.json", "**/serviceAccountKey.json"]
   },
   {
     id: "FH-015",
     pattern: "id_rsa",
     title: "Missing SSH keys in .aiignore",
-    description: "SSH private keys should not be accessible to AI tools. Add id_rsa* to .aiignore.",
-    severity: 1 /* High */,
-    cweId: "CWE-321"
+    description: "SSH private key files were found in the workspace and are not listed in .aiignore. AI tools may read these files. Consider adding id_rsa* to .aiignore.",
+    severity: 4 /* Info */,
+    cweId: "CWE-321",
+    fileGlobs: ["**/id_rsa", "**/id_rsa.*", "**/id_ed25519", "**/id_ed25519.*"]
   }
 ];
 var sensitiveFilePatterns = [
@@ -3023,7 +3262,7 @@ var FileHygieneScanner = class {
   constructor() {
     this.name = "FileHygieneScanner";
   }
-  scan(context) {
+  async scan(context) {
     const fileName = context.filePath.split(/[/\\]/).pop() || "";
     if (fileName === ".gitignore" && context.isGitProject !== false) {
       return this.scanGitignore(context);
@@ -3137,29 +3376,46 @@ var FileHygieneScanner = class {
     }
     return findings;
   }
-  scanAiignore(context) {
+  async scanAiignore(context) {
     const findings = [];
     const content = context.content;
     for (const rule of aiignoreRequiredPatterns) {
-      if (!this.isPatternCovered(rule.pattern, content)) {
-        const lines = content.split("\n");
-        const lastNonEmptyLine = this.findLastNonEmptyLine(lines);
-        findings.push({
-          id: rule.id,
-          category: "filehygiene" /* FileHygiene */,
-          severity: rule.severity,
-          title: rule.title,
-          description: rule.description,
-          location: {
-            filePath: context.filePath,
-            startLine: lastNonEmptyLine,
-            startColumn: 0,
-            endLine: lastNonEmptyLine,
-            endColumn: lines[lastNonEmptyLine]?.length || 0
-          },
-          cweId: rule.cweId
-        });
+      if (this.isPatternCovered(rule.pattern, content)) {
+        continue;
       }
+      if (rule.fileGlobs && rule.fileGlobs.length > 0) {
+        let filesExist = false;
+        for (const glob of rule.fileGlobs) {
+          try {
+            const files = await vscode.workspace.findFiles(glob, "**/node_modules/**", 1);
+            if (files.length > 0) {
+              filesExist = true;
+              break;
+            }
+          } catch {
+          }
+        }
+        if (!filesExist) {
+          continue;
+        }
+      }
+      const lines = content.split("\n");
+      const lastNonEmptyLine = this.findLastNonEmptyLine(lines);
+      findings.push({
+        id: rule.id,
+        category: "filehygiene" /* FileHygiene */,
+        severity: rule.severity,
+        title: rule.title,
+        description: rule.description,
+        location: {
+          filePath: context.filePath,
+          startLine: lastNonEmptyLine,
+          startColumn: 0,
+          endLine: lastNonEmptyLine,
+          endColumn: lines[lastNonEmptyLine]?.length || 0
+        },
+        cweId: rule.cweId
+      });
     }
     return findings;
   }
@@ -3298,7 +3554,7 @@ var ScannerEngine = class {
       projectType: config.get("projectType", "auto")
     };
   }
-  scanDocument(document) {
+  async scanDocument(document) {
     const config = this.getConfig();
     const filePath = document.uri.fsPath;
     const content = document.getText();
@@ -3323,7 +3579,7 @@ var ScannerEngine = class {
     const findings = [];
     const scanners = this.registry.getAll();
     for (const scanner of scanners) {
-      const scannerFindings = scanner.scan(context);
+      const scannerFindings = await scanner.scan(context);
       const filtered = scannerFindings.filter((f) => {
         if (!config.enabledCategories.includes(f.category)) {
           return false;
@@ -3353,7 +3609,7 @@ var ScannerEngine = class {
     for (const file of files) {
       try {
         const document = await vscode2.workspace.openTextDocument(file);
-        const findings = this.scanDocument(document);
+        const findings = await this.scanDocument(document);
         allFindings.push(...findings);
       } catch {
       }
@@ -4083,10 +4339,10 @@ var DashboardPanel = class _DashboardPanel {
       }
     );
   }
-  scanCurrentFile() {
+  async scanCurrentFile() {
     const editor = vscode8.window.activeTextEditor;
     if (editor) {
-      const findings = this.engine.scanDocument(editor.document);
+      const findings = await this.engine.scanDocument(editor.document);
       this.panel.webview.postMessage({ type: "scanStatus", status: "done", count: findings.length });
       this.refresh();
     } else {
@@ -4583,7 +4839,7 @@ function activate(context) {
     )
   );
   const debouncedScan = debounce((document) => {
-    engine.scanDocument(document);
+    void engine.scanDocument(document);
   }, 300);
   context.subscriptions.push(
     vscode9.workspace.onDidSaveTextDocument((document) => {
@@ -4612,10 +4868,10 @@ function activate(context) {
     })
   );
   context.subscriptions.push(
-    vscode9.commands.registerCommand("secureScanner.scanFile", () => {
+    vscode9.commands.registerCommand("secureScanner.scanFile", async () => {
       const editor = vscode9.window.activeTextEditor;
       if (editor) {
-        const findings = engine.scanDocument(editor.document);
+        const findings = await engine.scanDocument(editor.document);
         vscode9.window.showInformationMessage(
           `SecureScanner: Found ${findings.length} issue(s) in ${editor.document.fileName.split(/[/\\]/).pop()}`
         );
@@ -4675,7 +4931,7 @@ function activate(context) {
   );
   context.subscriptions.push(diagnosticsProvider, treeViewProvider, treeView, engine);
   if (vscode9.window.activeTextEditor) {
-    engine.scanDocument(vscode9.window.activeTextEditor.document);
+    void engine.scanDocument(vscode9.window.activeTextEditor.document);
   }
   setTimeout(async () => {
     const config = vscode9.workspace.getConfiguration("secureScanner");

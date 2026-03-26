@@ -2,6 +2,13 @@
 
 All notable changes to SecureScanner will be documented in this file.
 
+## [1.0.3] - 2026-03-26
+
+### Improved
+- **.aiignore findings are now conditional** — Rules for missing .aiignore patterns (*.pem, *.key, credentials.json, etc.) now first check if the sensitive files actually exist in the workspace. No files found = no finding. Files found but not in .aiignore = reported as Info so the developer can decide.
+- **Comment/docstring-aware scanning** — Matches found inside comments or docstrings (e.g. `verify=False` in a Python docstring) are now reported as Low severity instead of the original severity, with a note that it is not executable code. Supports comment syntax for Python, JavaScript, TypeScript, SQL, Robot Framework, Lua, HTML, and many more languages.
+- **Documentation file awareness** — Findings in documentation files (README.md, CHANGELOG.md, .rst, .txt, etc.) are now reported as Info severity, preventing false positives from code examples in documentation.
+
 ## [1.0.0] - 2026-03-26
 
 ### Changed
