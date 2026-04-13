@@ -15,7 +15,7 @@ SecureScanner analyzes the code in your current workspace and flags potential se
 | **Credentials & Secrets** | Hardcoded API keys (AWS, GitHub, Slack, Stripe, Google), private keys, passwords, JWT tokens, database connection strings |
 | **OWASP Top 10** | SQL injection, XSS (innerHTML, document.write), command injection, eval(), insecure deserialization, weak cryptography (MD5/SHA1), CSRF, path traversal |
 | **Vulnerable Dependencies** | Known CVEs in npm (package.json) and pip (requirements.txt) packages, with live updates from the OSV.dev database |
-| **Misconfigurations** | Wildcard CORS, disabled TLS verification, debug mode, insecure random (Math.random), empty catch blocks, hardcoded IPs, missing Helmet.js, binding to 0.0.0.0 |
+| **Misconfigurations** | Wildcard CORS, disabled TLS verification (`verify=False`), debug mode, insecure random (Math.random), empty catch blocks, hardcoded IPs, missing Helmet.js, binding to 0.0.0.0 |
 | **File Hygiene** | Missing or incomplete .gitignore and .aiignore files, sensitive files (.env, *.pem, *.key, credentials.json, SSH keys) not excluded from version control or AI tools |
 
 ### Features
@@ -27,6 +27,7 @@ SecureScanner analyzes the code in your current workspace and flags potential se
 - **Hover tooltips** — See finding details, CWE references, and OWASP IDs by hovering over flagged code
 - **Quick fixes** — Suppress findings, move secrets to environment variables, replace innerHTML with textContent
 - **CVE database updates** — Fetch the latest vulnerability data from OSV.dev with one click
+- **Test environment mode** — Toggle to suppress findings that are common in test environments (e.g. `verify=False`, debug mode)
 - **Export reports** — Export all findings as JSON
 
 ### Supported Languages
@@ -53,6 +54,7 @@ JavaScript, TypeScript, Python, Java, PHP, and framework-specific patterns (Reac
 | `secureScanner.severityThreshold` | `Low` | Minimum severity level to report |
 | `secureScanner.ignorePaths` | `node_modules, dist, .git, out, build` | Glob patterns for paths to ignore |
 | `secureScanner.enabledCategories` | All categories | Which scanner categories to enable |
+| `secureScanner.isTestEnvironment` | `false` | Suppress findings common in test environments (e.g. `verify=False`, debug mode) |
 | `secureScanner.maxFileSizeKB` | `512` | Maximum file size to scan (KB) |
 
 ## Disclaimer
