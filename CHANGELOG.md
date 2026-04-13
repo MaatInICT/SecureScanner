@@ -2,6 +2,17 @@
 
 All notable changes to SecureScanner will be documented in this file.
 
+## [1.0.4] - 2026-04-13
+
+### Added
+- **Test Environment toggle** — Dashboard toggle to mark a project as a test environment, suppressing findings that are common in test setups (e.g. `verify=False`, debug mode enabled)
+- New `secureScanner.isTestEnvironment` workspace setting
+- `testEnvironmentSafe` flag on scanner rules to control which rules are suppressed
+
+### Changed
+- Redesigned extension logo — shield with embedded MaatInICT logo (PNG)
+- Version bump to 1.0.4
+
 ## [1.0.0] - 2026-03-26
 
 ### Changed
