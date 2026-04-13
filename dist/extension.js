@@ -721,8 +721,8 @@ var require_lt = __commonJS({
   "node_modules/semver/functions/lt.js"(exports2, module2) {
     "use strict";
     var compare = require_compare();
-    var lt2 = (a, b, loose) => compare(a, b, loose) < 0;
-    module2.exports = lt2;
+    var lt3 = (a, b, loose) => compare(a, b, loose) < 0;
+    module2.exports = lt3;
   }
 });
 
@@ -774,7 +774,7 @@ var require_cmp = __commonJS({
     var neq = require_neq();
     var gt = require_gt();
     var gte = require_gte();
-    var lt2 = require_lt();
+    var lt3 = require_lt();
     var lte = require_lte();
     var cmp = (a, op, b, loose) => {
       switch (op) {
@@ -805,7 +805,7 @@ var require_cmp = __commonJS({
         case ">=":
           return gte(a, b, loose);
         case "<":
-          return lt2(a, b, loose);
+          return lt3(a, b, loose);
         case "<=":
           return lte(a, b, loose);
         default:
@@ -823,7 +823,7 @@ var require_coerce = __commonJS({
     var SemVer = require_semver();
     var parse = require_parse();
     var { safeRe: re, t } = require_re();
-    var coerce2 = (version, options) => {
+    var coerce3 = (version, options) => {
       if (version instanceof SemVer) {
         return version;
       }
@@ -858,7 +858,7 @@ var require_coerce = __commonJS({
       const build = options.includePrerelease && match[6] ? `+${match[6]}` : "";
       return parse(`${major}.${minor}.${patch}${prerelease}${build}`, options);
     };
-    module2.exports = coerce2;
+    module2.exports = coerce3;
   }
 });
 
@@ -1560,7 +1560,7 @@ var require_outside = __commonJS({
     var Range5 = require_range();
     var satisfies2 = require_satisfies();
     var gt = require_gt();
-    var lt2 = require_lt();
+    var lt3 = require_lt();
     var lte = require_lte();
     var gte = require_gte();
     var outside = (version, range, hilo, options) => {
@@ -1571,12 +1571,12 @@ var require_outside = __commonJS({
         case ">":
           gtfn = gt;
           ltefn = lte;
-          ltfn = lt2;
+          ltfn = lt3;
           comp = ">";
           ecomp = ">=";
           break;
         case "<":
-          gtfn = lt2;
+          gtfn = lt3;
           ltefn = gte;
           ltfn = gt;
           comp = "<";
@@ -1756,12 +1756,12 @@ var require_subset = __commonJS({
         }
       }
       const eqSet = /* @__PURE__ */ new Set();
-      let gt, lt2;
+      let gt, lt3;
       for (const c of sub) {
         if (c.operator === ">" || c.operator === ">=") {
           gt = higherGT(gt, c, options);
         } else if (c.operator === "<" || c.operator === "<=") {
-          lt2 = lowerLT(lt2, c, options);
+          lt3 = lowerLT(lt3, c, options);
         } else {
           eqSet.add(c.semver);
         }
@@ -1770,11 +1770,11 @@ var require_subset = __commonJS({
         return null;
       }
       let gtltComp;
-      if (gt && lt2) {
-        gtltComp = compare(gt.semver, lt2.semver, options);
+      if (gt && lt3) {
+        gtltComp = compare(gt.semver, lt3.semver, options);
         if (gtltComp > 0) {
           return null;
-        } else if (gtltComp === 0 && (gt.operator !== ">=" || lt2.operator !== "<=")) {
+        } else if (gtltComp === 0 && (gt.operator !== ">=" || lt3.operator !== "<=")) {
           return null;
         }
       }
@@ -1782,7 +1782,7 @@ var require_subset = __commonJS({
         if (gt && !satisfies2(eq, String(gt), options)) {
           return null;
         }
-        if (lt2 && !satisfies2(eq, String(lt2), options)) {
+        if (lt3 && !satisfies2(eq, String(lt3), options)) {
           return null;
         }
         for (const c of dom) {
@@ -1794,9 +1794,9 @@ var require_subset = __commonJS({
       }
       let higher, lower;
       let hasDomLT, hasDomGT;
-      let needDomLTPre = lt2 && !options.includePrerelease && lt2.semver.prerelease.length ? lt2.semver : false;
+      let needDomLTPre = lt3 && !options.includePrerelease && lt3.semver.prerelease.length ? lt3.semver : false;
       let needDomGTPre = gt && !options.includePrerelease && gt.semver.prerelease.length ? gt.semver : false;
-      if (needDomLTPre && needDomLTPre.prerelease.length === 1 && lt2.operator === "<" && needDomLTPre.prerelease[0] === 0) {
+      if (needDomLTPre && needDomLTPre.prerelease.length === 1 && lt3.operator === "<" && needDomLTPre.prerelease[0] === 0) {
         needDomLTPre = false;
       }
       for (const c of dom) {
@@ -1817,29 +1817,29 @@ var require_subset = __commonJS({
             return false;
           }
         }
-        if (lt2) {
+        if (lt3) {
           if (needDomLTPre) {
             if (c.semver.prerelease && c.semver.prerelease.length && c.semver.major === needDomLTPre.major && c.semver.minor === needDomLTPre.minor && c.semver.patch === needDomLTPre.patch) {
               needDomLTPre = false;
             }
           }
           if (c.operator === "<" || c.operator === "<=") {
-            lower = lowerLT(lt2, c, options);
-            if (lower === c && lower !== lt2) {
+            lower = lowerLT(lt3, c, options);
+            if (lower === c && lower !== lt3) {
               return false;
             }
-          } else if (lt2.operator === "<=" && !satisfies2(lt2.semver, String(c), options)) {
+          } else if (lt3.operator === "<=" && !satisfies2(lt3.semver, String(c), options)) {
             return false;
           }
         }
-        if (!c.operator && (lt2 || gt) && gtltComp !== 0) {
+        if (!c.operator && (lt3 || gt) && gtltComp !== 0) {
           return false;
         }
       }
-      if (gt && hasDomLT && !lt2 && gtltComp !== 0) {
+      if (gt && hasDomLT && !lt3 && gtltComp !== 0) {
         return false;
       }
-      if (lt2 && hasDomGT && !gt && gtltComp !== 0) {
+      if (lt3 && hasDomGT && !gt && gtltComp !== 0) {
         return false;
       }
       if (needDomGTPre || needDomLTPre) {
@@ -1889,13 +1889,13 @@ var require_semver2 = __commonJS({
     var sort = require_sort();
     var rsort = require_rsort();
     var gt = require_gt();
-    var lt2 = require_lt();
+    var lt3 = require_lt();
     var eq = require_eq();
     var neq = require_neq();
     var gte = require_gte();
     var lte = require_lte();
     var cmp = require_cmp();
-    var coerce2 = require_coerce();
+    var coerce3 = require_coerce();
     var Comparator = require_comparator();
     var Range5 = require_range();
     var satisfies2 = require_satisfies();
@@ -1927,13 +1927,13 @@ var require_semver2 = __commonJS({
       sort,
       rsort,
       gt,
-      lt: lt2,
+      lt: lt3,
       eq,
       neq,
       gte,
       lte,
       cmp,
-      coerce: coerce2,
+      coerce: coerce3,
       Comparator,
       Range: Range5,
       satisfies: satisfies2,
@@ -1967,7 +1967,7 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode9 = __toESM(require("vscode"));
+var vscode10 = __toESM(require("vscode"));
 var path5 = __toESM(require("path"));
 var fs4 = __toESM(require("fs"));
 
@@ -2003,6 +2003,96 @@ var ScannerRegistry = class {
 };
 
 // src/engine/ruleEngine.ts
+function getCommentMarkers(languageId) {
+  switch (languageId) {
+    case "python":
+    case "ruby":
+    case "shellscript":
+    case "yaml":
+    case "dockerfile":
+    case "perl":
+    case "r":
+    case "powershell":
+      return ["#"];
+    case "javascript":
+    case "typescript":
+    case "javascriptreact":
+    case "typescriptreact":
+    case "java":
+    case "c":
+    case "cpp":
+    case "csharp":
+    case "go":
+    case "rust":
+    case "swift":
+    case "kotlin":
+    case "php":
+    case "scss":
+    case "less":
+      return ["//"];
+    default:
+      return ["//", "#"];
+  }
+}
+function buildCommentRanges(content, languageId, lineOffsets) {
+  const ranges = [];
+  const markers = getCommentMarkers(languageId);
+  for (let i = 0; i < lineOffsets.length; i++) {
+    const lineStart = lineOffsets[i];
+    const lineEnd = i + 1 < lineOffsets.length ? lineOffsets[i + 1] - 1 : content.length;
+    const line = content.substring(lineStart, lineEnd);
+    for (const marker of markers) {
+      const idx = findUnquotedMarker(line, marker);
+      if (idx !== -1) {
+        ranges.push({ start: lineStart + idx, end: lineEnd });
+        break;
+      }
+    }
+  }
+  let mlMatch;
+  const mlRegex = /\/\*[\s\S]*?\*\//g;
+  while ((mlMatch = mlRegex.exec(content)) !== null) {
+    ranges.push({ start: mlMatch.index, end: mlMatch.index + mlMatch[0].length });
+  }
+  const htmlRegex = /<!--[\s\S]*?-->/g;
+  while ((mlMatch = htmlRegex.exec(content)) !== null) {
+    ranges.push({ start: mlMatch.index, end: mlMatch.index + mlMatch[0].length });
+  }
+  return ranges;
+}
+function findUnquotedMarker(line, marker) {
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    const prev = i > 0 ? line[i - 1] : "";
+    if (prev === "\\") {
+      continue;
+    }
+    if (ch === "'" && !inDouble && !inBacktick) {
+      inSingle = !inSingle;
+      continue;
+    }
+    if (ch === '"' && !inSingle && !inBacktick) {
+      inDouble = !inDouble;
+      continue;
+    }
+    if (ch === "`" && !inSingle && !inDouble) {
+      inBacktick = !inBacktick;
+      continue;
+    }
+    if (!inSingle && !inDouble && !inBacktick) {
+      if (line.substring(i, i + marker.length) === marker) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+function isInComment(offset, commentRanges) {
+  return commentRanges.some((r) => offset >= r.start && offset < r.end);
+}
 function buildLineOffsets(content) {
   const offsets = [0];
   for (let i = 0; i < content.length; i++) {
@@ -2025,7 +2115,7 @@ function offsetToPosition(offset, lineOffsets) {
   }
   return { line: low, column: offset - lineOffsets[low] };
 }
-function executeRule(rule, context, lineOffsets) {
+function executeRule(rule, context, lineOffsets, commentRanges) {
   const findings = [];
   if (context.isTestEnvironment && rule.testEnvironmentSafe) {
     return findings;
@@ -2070,11 +2160,14 @@ function executeRule(rule, context, lineOffsets) {
     if (rule.category === "credential" && matchedText.length > 8) {
       matchedText = matchedText.substring(0, 4) + "****" + matchedText.substring(matchedText.length - 4);
     }
+    const inComment = isInComment(match.index, commentRanges);
+    const severity = inComment ? 4 /* Info */ : rule.severity;
+    const title = inComment ? `${rule.title} (in comment)` : rule.title;
     findings.push({
       id: rule.id,
       category: rule.category,
-      severity: rule.severity,
-      title: rule.title,
+      severity,
+      title,
       description: rule.description,
       location,
       matchedText,
@@ -2089,10 +2182,11 @@ function executeRule(rule, context, lineOffsets) {
 }
 function runRules(rules, context) {
   const lineOffsets = buildLineOffsets(context.content);
+  const commentRanges = buildCommentRanges(context.content, context.languageId, lineOffsets);
   const findings = [];
   for (const rule of rules) {
     try {
-      const ruleFindings = executeRule(rule, context, lineOffsets);
+      const ruleFindings = executeRule(rule, context, lineOffsets, commentRanges);
       findings.push(...ruleFindings);
     } catch {
       console.warn(`SecureScanner: Rule ${rule.id} failed on ${context.filePath}`);
@@ -3301,7 +3395,8 @@ var ScannerEngine = class {
       ]),
       maxFileSizeKB: config.get("maxFileSizeKB", 512),
       projectType: config.get("projectType", "auto"),
-      isTestEnvironment: config.get("isTestEnvironment", false)
+      isTestEnvironment: config.get("isTestEnvironment", false),
+      pipIndexUrl: config.get("pipIndexUrl", "https://pypi.org/pypi")
     };
   }
   scanDocument(document) {
@@ -3745,7 +3840,7 @@ var SecurityHoverProvider = class {
 };
 
 // src/webview/dashboardPanel.ts
-var vscode8 = __toESM(require("vscode"));
+var vscode9 = __toESM(require("vscode"));
 var path4 = __toESM(require("path"));
 var fs3 = __toESM(require("fs"));
 
@@ -3995,6 +4090,104 @@ async function fetchVulnerabilityUpdates(progress) {
   };
 }
 
+// src/engine/pipUpdateChecker.ts
+var vscode8 = __toESM(require("vscode"));
+var https2 = __toESM(require("https"));
+var http = __toESM(require("http"));
+var semver2 = __toESM(require_semver2());
+function fetchLatestVersion(packageName, indexUrl) {
+  const url = `${indexUrl.replace(/\/+$/, "")}/${encodeURIComponent(packageName)}/json`;
+  return new Promise((resolve) => {
+    const client = url.startsWith("https") ? https2 : http;
+    const req = client.get(url, (res) => {
+      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        fetchLatestVersion(packageName, res.headers.location.replace(`/${packageName}/json`, "")).then(resolve);
+        return;
+      }
+      if (res.statusCode !== 200) {
+        resolve(null);
+        res.resume();
+        return;
+      }
+      let body = "";
+      res.on("data", (chunk) => body += chunk);
+      res.on("end", () => {
+        try {
+          const data = JSON.parse(body);
+          resolve(data.info?.version || null);
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+    req.on("error", () => resolve(null));
+    req.setTimeout(1e4, () => {
+      req.destroy();
+      resolve(null);
+    });
+  });
+}
+function parseRequirementsTxt(content) {
+  const packages = [];
+  const lines = content.split("\n");
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#") || line.startsWith("-")) {
+      continue;
+    }
+    const match = line.match(/^([a-zA-Z0-9_.-]+)\s*(?:==|>=|~=)\s*([0-9][0-9a-zA-Z.*]*)/);
+    if (match) {
+      packages.push({ name: match[1], version: match[2] });
+    }
+  }
+  return packages;
+}
+async function checkPipUpdates(indexUrl, progress) {
+  const results = [];
+  const files = await vscode8.workspace.findFiles("**/requirements*.txt", "**/node_modules/**", 50);
+  const allPackages = /* @__PURE__ */ new Map();
+  for (const file of files) {
+    try {
+      const doc = await vscode8.workspace.openTextDocument(file);
+      const parsed = parseRequirementsTxt(doc.getText());
+      for (const pkg of parsed) {
+        if (!allPackages.has(pkg.name.toLowerCase())) {
+          allPackages.set(pkg.name.toLowerCase(), pkg.version);
+        }
+      }
+    } catch {
+    }
+  }
+  if (allPackages.size === 0) {
+    return results;
+  }
+  const total = allPackages.size;
+  let processed = 0;
+  for (const [name, currentVersion] of allPackages) {
+    progress?.report({
+      message: `Checking ${name}... (${processed + 1}/${total})`,
+      increment: 1 / total * 100
+    });
+    const latestVersion = await fetchLatestVersion(name, indexUrl);
+    if (latestVersion) {
+      const current = semver2.coerce(currentVersion);
+      const latest = semver2.coerce(latestVersion);
+      const updateAvailable = current && latest ? semver2.lt(current, latest) : false;
+      if (updateAvailable) {
+        results.push({
+          name,
+          currentVersion,
+          latestVersion,
+          updateAvailable: true
+        });
+      }
+    }
+    processed++;
+  }
+  results.sort((a, b) => a.name.localeCompare(b.name));
+  return results;
+}
+
 // src/webview/dashboardPanel.ts
 var DashboardPanel = class _DashboardPanel {
   constructor(panel, engine2, extensionUri, globalStorageUri) {
@@ -4029,6 +4222,9 @@ var DashboardPanel = class _DashboardPanel {
           case "toggleTestEnvironment":
             this.toggleTestEnvironment(message.value);
             break;
+          case "checkPipUpdates":
+            this.checkPipUpdates();
+            break;
         }
       },
       null,
@@ -4040,16 +4236,16 @@ var DashboardPanel = class _DashboardPanel {
     this.refresh();
   }
   static createOrShow(engine2, extensionUri, globalStorageUri) {
-    const column = vscode8.window.activeTextEditor ? vscode8.window.activeTextEditor.viewColumn : void 0;
+    const column = vscode9.window.activeTextEditor ? vscode9.window.activeTextEditor.viewColumn : void 0;
     if (_DashboardPanel.currentPanel) {
       _DashboardPanel.currentPanel.panel.reveal(column);
       _DashboardPanel.currentPanel.refresh();
       return;
     }
-    const panel = vscode8.window.createWebviewPanel(
+    const panel = vscode9.window.createWebviewPanel(
       "secureScanner.dashboard",
       "Security Dashboard",
-      column || vscode8.ViewColumn.One,
+      column || vscode9.ViewColumn.One,
       {
         enableScripts: true,
         retainContextWhenHidden: true
@@ -4071,20 +4267,20 @@ var DashboardPanel = class _DashboardPanel {
     });
   }
   navigateToFinding(finding) {
-    const uri = vscode8.Uri.file(finding.location.filePath);
-    const range = new vscode8.Range(
+    const uri = vscode9.Uri.file(finding.location.filePath);
+    const range = new vscode9.Range(
       finding.location.startLine,
       finding.location.startColumn,
       finding.location.endLine,
       finding.location.endColumn
     );
-    vscode8.window.showTextDocument(uri, { selection: range });
+    vscode9.window.showTextDocument(uri, { selection: range });
   }
   async scanWorkspace() {
     this.panel.webview.postMessage({ type: "scanStatus", status: "scanning" });
-    await vscode8.window.withProgress(
+    await vscode9.window.withProgress(
       {
-        location: vscode8.ProgressLocation.Notification,
+        location: vscode9.ProgressLocation.Notification,
         title: "SecureScanner: Scanning workspace...",
         cancellable: false
       },
@@ -4096,21 +4292,21 @@ var DashboardPanel = class _DashboardPanel {
     );
   }
   scanCurrentFile() {
-    const editor = vscode8.window.activeTextEditor;
+    const editor = vscode9.window.activeTextEditor;
     if (editor) {
       const findings = this.engine.scanDocument(editor.document);
       this.panel.webview.postMessage({ type: "scanStatus", status: "done", count: findings.length });
       this.refresh();
     } else {
-      vscode8.window.showWarningMessage("SecureScanner: No active file to scan.");
+      vscode9.window.showWarningMessage("SecureScanner: No active file to scan.");
     }
   }
   async updateVulnDb() {
     this.panel.webview.postMessage({ type: "vulnDbStatus", status: "updating" });
     try {
-      const result = await vscode8.window.withProgress(
+      const result = await vscode9.window.withProgress(
         {
-          location: vscode8.ProgressLocation.Notification,
+          location: vscode9.ProgressLocation.Notification,
           title: "SecureScanner: Updating vulnerability database...",
           cancellable: false
         },
@@ -4137,10 +4333,10 @@ var DashboardPanel = class _DashboardPanel {
         npmCount: result.npm.length,
         pipCount: result.pip.length
       });
-      vscode8.window.showInformationMessage(
+      vscode9.window.showInformationMessage(
         `SecureScanner: Vulnerability database updated! Found ${result.npm.length} npm + ${result.pip.length} pip vulnerabilities.`
       );
-      const rescan = await vscode8.window.showInformationMessage(
+      const rescan = await vscode9.window.showInformationMessage(
         "Re-scan workspace with updated database?",
         "Yes",
         "No"
@@ -4150,7 +4346,7 @@ var DashboardPanel = class _DashboardPanel {
       }
     } catch (err) {
       this.panel.webview.postMessage({ type: "vulnDbStatus", status: "error" });
-      vscode8.window.showErrorMessage(
+      vscode9.window.showErrorMessage(
         `SecureScanner: Failed to update vulnerability database. ${err instanceof Error ? err.message : "Check your internet connection."}`
       );
     }
@@ -4166,25 +4362,59 @@ var DashboardPanel = class _DashboardPanel {
       totalFindings: allFindings.length,
       findings: allFindings
     };
-    const uri = await vscode8.window.showSaveDialog({
+    const uri = await vscode9.window.showSaveDialog({
       filters: { "JSON": ["json"] },
-      defaultUri: vscode8.Uri.file("security-report.json")
+      defaultUri: vscode9.Uri.file("security-report.json")
     });
     if (uri) {
       const content = Buffer.from(JSON.stringify(report, null, 2), "utf8");
-      await vscode8.workspace.fs.writeFile(uri, content);
-      vscode8.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+      await vscode9.workspace.fs.writeFile(uri, content);
+      vscode9.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+    }
+  }
+  async checkPipUpdates() {
+    this.panel.webview.postMessage({ type: "pipUpdateStatus", status: "checking" });
+    try {
+      const config = this.engine.getConfig();
+      const results = await vscode9.window.withProgress(
+        {
+          location: vscode9.ProgressLocation.Notification,
+          title: "SecureScanner: Checking pip packages for updates...",
+          cancellable: false
+        },
+        async (progress) => {
+          return await checkPipUpdates(config.pipIndexUrl, progress);
+        }
+      );
+      this.panel.webview.postMessage({
+        type: "pipUpdateStatus",
+        status: "done",
+        packages: results,
+        indexUrl: config.pipIndexUrl
+      });
+      if (results.length === 0) {
+        vscode9.window.showInformationMessage("SecureScanner: All pip packages are up to date!");
+      } else {
+        vscode9.window.showInformationMessage(
+          `SecureScanner: ${results.length} pip package(s) have updates available.`
+        );
+      }
+    } catch (err) {
+      this.panel.webview.postMessage({ type: "pipUpdateStatus", status: "error" });
+      vscode9.window.showErrorMessage(
+        `SecureScanner: Failed to check pip updates. ${err instanceof Error ? err.message : "Check your internet connection."}`
+      );
     }
   }
   async toggleTestEnvironment(value) {
-    const config = vscode8.workspace.getConfiguration("secureScanner");
-    await config.update("isTestEnvironment", value, vscode8.ConfigurationTarget.Workspace);
+    const config = vscode9.workspace.getConfiguration("secureScanner");
+    await config.update("isTestEnvironment", value, vscode9.ConfigurationTarget.Workspace);
     this.scanWorkspace();
   }
   getHtmlContent(extensionUri) {
     const nonce = getNonce();
     const logoUri = this.panel.webview.asWebviewUri(
-      vscode8.Uri.joinPath(extensionUri, "media", "logo.svg")
+      vscode9.Uri.joinPath(extensionUri, "media", "logo.svg")
     );
     return (
       /*html*/
@@ -4433,6 +4663,15 @@ var DashboardPanel = class _DashboardPanel {
   </div>
   <div id="content"></div>
 
+  <div style="margin-top: 24px; border-top: 2px solid var(--vscode-panel-border); padding-top: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <h2 style="margin: 0; font-size: 1.2em;">&#128230; Pip Package Updates</h2>
+      <button id="checkPipUpdatesBtn" class="update-btn">&#128269; Check for Updates</button>
+      <span id="pipUpdateStatusText" style="font-size: 0.85em; display: none;"></span>
+    </div>
+    <div id="pipUpdatesContent" style="font-size: 0.85em; opacity: 0.7;">Click "Check for Updates" to scan requirements.txt files for outdated packages.</div>
+  </div>
+
   <div class="disclaimer">
     <strong>Disclaimer</strong><br>
     SecureScanner is a free tool provided by <strong>MaatInICT B.V.</strong> on an "as is" basis, without warranties or guarantees of any kind, either express or implied.
@@ -4543,6 +4782,17 @@ var DashboardPanel = class _DashboardPanel {
       vscode.postMessage({ command: 'toggleTestEnvironment', value: e.target.checked });
     });
 
+    document.getElementById('checkPipUpdatesBtn').addEventListener('click', () => {
+      const btn = document.getElementById('checkPipUpdatesBtn');
+      const statusText = document.getElementById('pipUpdateStatusText');
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+      statusText.style.display = 'inline';
+      statusText.textContent = 'Querying package index...';
+      statusText.style.color = 'var(--vscode-descriptionForeground)';
+      vscode.postMessage({ command: 'checkPipUpdates' });
+    });
+
     document.getElementById('updateVulnDbBtn').addEventListener('click', () => {
       const btn = document.getElementById('updateVulnDbBtn');
       const statusText = document.getElementById('vulnDbStatusText');
@@ -4569,6 +4819,48 @@ var DashboardPanel = class _DashboardPanel {
         if (message.status === 'done') {
           btn.disabled = false;
           btn.innerHTML = '&#128269; Scan Workspace';
+        }
+      }
+      if (message.type === 'pipUpdateStatus') {
+        const btn = document.getElementById('checkPipUpdatesBtn');
+        const statusText = document.getElementById('pipUpdateStatusText');
+        const content = document.getElementById('pipUpdatesContent');
+        if (message.status === 'done') {
+          btn.disabled = false;
+          btn.innerHTML = '&#128269; Check for Updates';
+          const packages = message.packages || [];
+          if (packages.length === 0) {
+            content.innerHTML = '<div style="padding: 12px; opacity: 0.7;">All pip packages are up to date.</div>';
+            statusText.style.display = 'inline';
+            statusText.textContent = 'All up to date!';
+            statusText.style.color = '#4caf50';
+          } else {
+            let html = '<div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 8px;">Source: ' + (message.indexUrl || 'PyPI') + '</div>';
+            html += '<table><thead><tr>';
+            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th>';
+            html += '</tr></thead><tbody>';
+            packages.forEach(function(pkg) {
+              html += '<tr>';
+              html += '<td><strong>' + pkg.name + '</strong></td>';
+              html += '<td><span class="severity-badge medium">' + pkg.currentVersion + '</span></td>';
+              html += '<td><span class="severity-badge info" style="background: #4caf50; color: white;">' + pkg.latestVersion + '</span></td>';
+              html += '</tr>';
+            });
+            html += '</tbody></table>';
+            content.innerHTML = html;
+            statusText.style.display = 'inline';
+            statusText.textContent = packages.length + ' update(s) available';
+            statusText.style.color = '#ff9800';
+          }
+          setTimeout(function() { statusText.style.display = 'none'; }, 5000);
+        }
+        if (message.status === 'error') {
+          btn.disabled = false;
+          btn.innerHTML = '&#128269; Check for Updates';
+          statusText.style.display = 'inline';
+          statusText.textContent = 'Check failed - verify connection and index URL';
+          statusText.style.color = '#f44336';
+          content.innerHTML = '<div style="padding: 12px; color: #f44336;">Failed to check for updates. Please verify your internet connection and pip index URL setting.</div>';
         }
       }
       if (message.type === 'vulnDbStatus') {
@@ -4637,43 +4929,43 @@ function activate(context) {
   const treeViewProvider = new FindingsTreeViewProvider(engine);
   const hoverProvider = new SecurityHoverProvider(engine);
   const codeActionProvider = new SecurityCodeActionProvider();
-  const treeView = vscode9.window.createTreeView("secureScanner.findings", {
+  const treeView = vscode10.window.createTreeView("secureScanner.findings", {
     treeDataProvider: treeViewProvider,
     showCollapseAll: true
   });
   context.subscriptions.push(
-    vscode9.languages.registerHoverProvider({ scheme: "file" }, hoverProvider)
+    vscode10.languages.registerHoverProvider({ scheme: "file" }, hoverProvider)
   );
   context.subscriptions.push(
-    vscode9.languages.registerCodeActionsProvider(
+    vscode10.languages.registerCodeActionsProvider(
       { scheme: "file" },
       codeActionProvider,
-      { providedCodeActionKinds: [vscode9.CodeActionKind.QuickFix] }
+      { providedCodeActionKinds: [vscode10.CodeActionKind.QuickFix] }
     )
   );
   const debouncedScan = debounce((document) => {
     engine.scanDocument(document);
   }, 300);
   context.subscriptions.push(
-    vscode9.workspace.onDidSaveTextDocument((document) => {
-      const config = vscode9.workspace.getConfiguration("secureScanner");
+    vscode10.workspace.onDidSaveTextDocument((document) => {
+      const config = vscode10.workspace.getConfiguration("secureScanner");
       if (config.get("enableOnSave", true)) {
         debouncedScan(document);
       }
     })
   );
   context.subscriptions.push(
-    vscode9.workspace.onDidOpenTextDocument((document) => {
-      const config = vscode9.workspace.getConfiguration("secureScanner");
+    vscode10.workspace.onDidOpenTextDocument((document) => {
+      const config = vscode10.workspace.getConfiguration("secureScanner");
       if (config.get("enableOnOpen", true)) {
         debouncedScan(document);
       }
     })
   );
   context.subscriptions.push(
-    vscode9.window.onDidChangeActiveTextEditor((editor) => {
+    vscode10.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) {
-        const config = vscode9.workspace.getConfiguration("secureScanner");
+        const config = vscode10.workspace.getConfiguration("secureScanner");
         if (config.get("enableOnOpen", true)) {
           debouncedScan(editor.document);
         }
@@ -4681,29 +4973,29 @@ function activate(context) {
     })
   );
   context.subscriptions.push(
-    vscode9.commands.registerCommand("secureScanner.scanFile", () => {
-      const editor = vscode9.window.activeTextEditor;
+    vscode10.commands.registerCommand("secureScanner.scanFile", () => {
+      const editor = vscode10.window.activeTextEditor;
       if (editor) {
         const findings = engine.scanDocument(editor.document);
-        vscode9.window.showInformationMessage(
+        vscode10.window.showInformationMessage(
           `SecureScanner: Found ${findings.length} issue(s) in ${editor.document.fileName.split(/[/\\]/).pop()}`
         );
       } else {
-        vscode9.window.showWarningMessage("SecureScanner: No active file to scan.");
+        vscode10.window.showWarningMessage("SecureScanner: No active file to scan.");
       }
     })
   );
   context.subscriptions.push(
-    vscode9.commands.registerCommand("secureScanner.scanWorkspace", async () => {
-      await vscode9.window.withProgress(
+    vscode10.commands.registerCommand("secureScanner.scanWorkspace", async () => {
+      await vscode10.window.withProgress(
         {
-          location: vscode9.ProgressLocation.Notification,
+          location: vscode10.ProgressLocation.Notification,
           title: "SecureScanner: Scanning workspace...",
           cancellable: false
         },
         async () => {
           const findings = await engine.scanWorkspace();
-          vscode9.window.showInformationMessage(
+          vscode10.window.showInformationMessage(
             `SecureScanner: Workspace scan complete. Found ${findings.length} issue(s).`
           );
         }
@@ -4711,20 +5003,20 @@ function activate(context) {
     })
   );
   context.subscriptions.push(
-    vscode9.commands.registerCommand("secureScanner.openDashboard", () => {
+    vscode10.commands.registerCommand("secureScanner.openDashboard", () => {
       DashboardPanel.createOrShow(engine, context.extensionUri, context.globalStorageUri);
     })
   );
   context.subscriptions.push(
-    vscode9.commands.registerCommand("secureScanner.clearFindings", () => {
+    vscode10.commands.registerCommand("secureScanner.clearFindings", () => {
       engine.clearFindings();
       diagnosticsProvider.clear();
-      vscode9.window.showInformationMessage("SecureScanner: All findings cleared.");
+      vscode10.window.showInformationMessage("SecureScanner: All findings cleared.");
     })
   );
   context.subscriptions.push(
-    vscode9.commands.registerCommand("secureScanner.suppressFinding", (document, diagnostic) => {
-      const edit = new vscode9.WorkspaceEdit();
+    vscode10.commands.registerCommand("secureScanner.suppressFinding", (document, diagnostic) => {
+      const edit = new vscode10.WorkspaceEdit();
       const line = document.lineAt(diagnostic.range.start.line);
       const code = typeof diagnostic.code === "object" ? diagnostic.code.value : diagnostic.code;
       edit.insert(
@@ -4732,37 +5024,37 @@ function activate(context) {
         line.range.end,
         ` // securescanner-ignore ${code}`
       );
-      vscode9.workspace.applyEdit(edit);
+      vscode10.workspace.applyEdit(edit);
     })
   );
   context.subscriptions.push(
-    vscode9.commands.registerCommand("secureScanner.moveToEnv", (_document, _range) => {
-      vscode9.window.showInformationMessage(
+    vscode10.commands.registerCommand("secureScanner.moveToEnv", (_document, _range) => {
+      vscode10.window.showInformationMessage(
         "SecureScanner: Replace the hardcoded value with process.env.YOUR_VARIABLE_NAME and add the value to your .env file."
       );
     })
   );
   context.subscriptions.push(diagnosticsProvider, treeViewProvider, treeView, engine);
-  if (vscode9.window.activeTextEditor) {
-    engine.scanDocument(vscode9.window.activeTextEditor.document);
+  if (vscode10.window.activeTextEditor) {
+    engine.scanDocument(vscode10.window.activeTextEditor.document);
   }
   setTimeout(async () => {
-    const config = vscode9.workspace.getConfiguration("secureScanner");
+    const config = vscode10.workspace.getConfiguration("secureScanner");
     if (config.get("enableOnOpen", true)) {
       const findings = await engine.scanWorkspace();
       if (findings.length > 0) {
-        vscode9.window.showInformationMessage(
+        vscode10.window.showInformationMessage(
           `SecureScanner: Found ${findings.length} security issue(s) in workspace. Click to view.`,
           "Open Dashboard"
         ).then((selection) => {
           if (selection === "Open Dashboard") {
-            vscode9.commands.executeCommand("secureScanner.openDashboard");
+            vscode10.commands.executeCommand("secureScanner.openDashboard");
           }
         });
       }
     }
   }, 2e3);
-  const statusBar = vscode9.window.createStatusBarItem(vscode9.StatusBarAlignment.Left, 100);
+  const statusBar = vscode10.window.createStatusBarItem(vscode10.StatusBarAlignment.Left, 100);
   statusBar.text = "$(shield) SecureScanner";
   statusBar.command = "secureScanner.openDashboard";
   statusBar.tooltip = "Open Security Dashboard";

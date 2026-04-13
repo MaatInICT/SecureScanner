@@ -11,4 +11,5 @@ export interface SecureScannerConfig {
   maxFileSizeKB: number;
   projectType: ProjectType;
   isTestEnvironment: boolean;
+  pipIndexUrl: string;
 }

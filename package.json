@@ -2,7 +2,7 @@
   "name": "securescanner",
   "displayName": "SecureScanner",
   "description": "Scan your codebase for security vulnerabilities, credentials, OWASP Top 10, and misconfigurations",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "MaatInICT",
   "engines": {
     "vscode": "^1.85.0"
@@ -132,6 +132,11 @@
             "Local project: skip all git-related checks (no .gitignore warnings)"
           ],
           "description": "Project type determines whether git-related security checks are performed. Use 'local' for codebases not under version control to avoid .gitignore-related findings."
+        },
+        "secureScanner.pipIndexUrl": {
+          "type": "string",
+          "default": "https://pypi.org/pypi",
+          "description": "Base URL for the pip package index used to check for updates. Use your Nexus/Artifactory URL for internal repositories (e.g. https://nexus.company.com/repository/pypi-proxy/pypi)."
         },
         "secureScanner.isTestEnvironment": {
           "type": "boolean",

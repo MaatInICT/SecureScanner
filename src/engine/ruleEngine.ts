@@ -1,5 +1,119 @@
-import { Finding, FindingLocation } from '../types/finding';
+import { Finding, FindingLocation, Severity } from '../types/finding';
 import { IScannerRule, ScanContext } from '../types/scanner';
+
+interface CommentRange {
+  start: number;
+  end: number;
+}
+
+/**
+ * Return the single-line comment markers for a given language.
+ */
+function getCommentMarkers(languageId: string): string[] {
+  switch (languageId) {
+    case 'python':
+    case 'ruby':
+    case 'shellscript':
+    case 'yaml':
+    case 'dockerfile':
+    case 'perl':
+    case 'r':
+    case 'powershell':
+      return ['#'];
+    case 'javascript':
+    case 'typescript':
+    case 'javascriptreact':
+    case 'typescriptreact':
+    case 'java':
+    case 'c':
+    case 'cpp':
+    case 'csharp':
+    case 'go':
+    case 'rust':
+    case 'swift':
+    case 'kotlin':
+    case 'php':
+    case 'scss':
+    case 'less':
+      return ['//'];
+    default:
+      return ['//', '#'];
+  }
+}
+
+/**
+ * Build a sorted list of character ranges that fall inside comments.
+ * Handles single-line (//, #) and multi-line comments.
+ */
+function buildCommentRanges(content: string, languageId: string, lineOffsets: number[]): CommentRange[] {
+  const ranges: CommentRange[] = [];
+  const markers = getCommentMarkers(languageId);
+
+  // Single-line comments: for each line, find the first unquoted marker
+  for (let i = 0; i < lineOffsets.length; i++) {
+    const lineStart = lineOffsets[i];
+    const lineEnd = i + 1 < lineOffsets.length ? lineOffsets[i + 1] - 1 : content.length;
+    const line = content.substring(lineStart, lineEnd);
+
+    for (const marker of markers) {
+      const idx = findUnquotedMarker(line, marker);
+      if (idx !== -1) {
+        ranges.push({ start: lineStart + idx, end: lineEnd });
+        break;
+      }
+    }
+  }
+
+  // Multi-line comments: /* ... */
+  let mlMatch: RegExpExecArray | null;
+  const mlRegex = /\/\*[\s\S]*?\*\//g;
+  while ((mlMatch = mlRegex.exec(content)) !== null) {
+    ranges.push({ start: mlMatch.index, end: mlMatch.index + mlMatch[0].length });
+  }
+
+  // HTML comments: <!-- ... -->
+  const htmlRegex = /<!--[\s\S]*?-->/g;
+  while ((mlMatch = htmlRegex.exec(content)) !== null) {
+    ranges.push({ start: mlMatch.index, end: mlMatch.index + mlMatch[0].length });
+  }
+
+  return ranges;
+}
+
+/**
+ * Find the first occurrence of a comment marker that is not inside a string literal.
+ * Returns -1 if no unquoted marker is found.
+ */
+function findUnquotedMarker(line: string, marker: string): number {
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    const prev = i > 0 ? line[i - 1] : '';
+
+    if (prev === '\\') { continue; }
+
+    if (ch === "'" && !inDouble && !inBacktick) { inSingle = !inSingle; continue; }
+    if (ch === '"' && !inSingle && !inBacktick) { inDouble = !inDouble; continue; }
+    if (ch === '`' && !inSingle && !inDouble) { inBacktick = !inBacktick; continue; }
+
+    if (!inSingle && !inDouble && !inBacktick) {
+      if (line.substring(i, i + marker.length) === marker) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+/**
+ * Check whether a character offset falls inside any comment range.
+ */
+function isInComment(offset: number, commentRanges: CommentRange[]): boolean {
+  return commentRanges.some(r => offset >= r.start && offset < r.end);
+}
 
 /**
  * Build a line offset index for fast offset-to-line/column conversion.
@@ -38,7 +152,8 @@ function offsetToPosition(offset: number, lineOffsets: number[]): { line: number
 function executeRule(
   rule: IScannerRule,
   context: ScanContext,
-  lineOffsets: number[]
+  lineOffsets: number[],
+  commentRanges: CommentRange[]
 ): Finding[] {
   const findings: Finding[] = [];
 
@@ -102,11 +217,16 @@ function executeRule(
       matchedText = matchedText.substring(0, 4) + '****' + matchedText.substring(matchedText.length - 4);
     }
 
+    // Downgrade severity for matches found inside comments
+    const inComment = isInComment(match.index, commentRanges);
+    const severity = inComment ? Severity.Info : rule.severity;
+    const title = inComment ? `${rule.title} (in comment)` : rule.title;
+
     findings.push({
       id: rule.id,
       category: rule.category,
-      severity: rule.severity,
-      title: rule.title,
+      severity,
+      title,
       description: rule.description,
       location,
       matchedText,
@@ -128,11 +248,12 @@ function executeRule(
  */
 export function runRules(rules: IScannerRule[], context: ScanContext): Finding[] {
   const lineOffsets = buildLineOffsets(context.content);
+  const commentRanges = buildCommentRanges(context.content, context.languageId, lineOffsets);
   const findings: Finding[] = [];
 
   for (const rule of rules) {
     try {
-      const ruleFindings = executeRule(rule, context, lineOffsets);
+      const ruleFindings = executeRule(rule, context, lineOffsets, commentRanges);
       findings.push(...ruleFindings);
     } catch {
       // Skip rules that error (e.g., invalid regex)

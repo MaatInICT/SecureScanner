@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { Finding } from '../types/finding';
 import { ScannerEngine } from '../engine/scannerEngine';
 import { fetchVulnerabilityUpdates } from '../engine/vulnDbUpdater';
+import { checkPipUpdates, PipPackageStatus } from '../engine/pipUpdateChecker';
 
 export class DashboardPanel {
   public static currentPanel: DashboardPanel | undefined;
@@ -44,6 +45,9 @@ export class DashboardPanel {
             break;
           case 'toggleTestEnvironment':
             this.toggleTestEnvironment(message.value);
+            break;
+          case 'checkPipUpdates':
+            this.checkPipUpdates();
             break;
         }
       },
@@ -215,6 +219,44 @@ export class DashboardPanel {
       const content = Buffer.from(JSON.stringify(report, null, 2), 'utf8');
       await vscode.workspace.fs.writeFile(uri, content);
       vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+    }
+  }
+
+  private async checkPipUpdates(): Promise<void> {
+    this.panel.webview.postMessage({ type: 'pipUpdateStatus', status: 'checking' });
+
+    try {
+      const config = this.engine.getConfig();
+      const results = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'SecureScanner: Checking pip packages for updates...',
+          cancellable: false,
+        },
+        async (progress) => {
+          return await checkPipUpdates(config.pipIndexUrl, progress);
+        }
+      );
+
+      this.panel.webview.postMessage({
+        type: 'pipUpdateStatus',
+        status: 'done',
+        packages: results,
+        indexUrl: config.pipIndexUrl,
+      });
+
+      if (results.length === 0) {
+        vscode.window.showInformationMessage('SecureScanner: All pip packages are up to date!');
+      } else {
+        vscode.window.showInformationMessage(
+          `SecureScanner: ${results.length} pip package(s) have updates available.`
+        );
+      }
+    } catch (err) {
+      this.panel.webview.postMessage({ type: 'pipUpdateStatus', status: 'error' });
+      vscode.window.showErrorMessage(
+        `SecureScanner: Failed to check pip updates. ${err instanceof Error ? err.message : 'Check your internet connection.'}`
+      );
     }
   }
 
@@ -475,6 +517,15 @@ export class DashboardPanel {
   </div>
   <div id="content"></div>
 
+  <div style="margin-top: 24px; border-top: 2px solid var(--vscode-panel-border); padding-top: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <h2 style="margin: 0; font-size: 1.2em;">&#128230; Pip Package Updates</h2>
+      <button id="checkPipUpdatesBtn" class="update-btn">&#128269; Check for Updates</button>
+      <span id="pipUpdateStatusText" style="font-size: 0.85em; display: none;"></span>
+    </div>
+    <div id="pipUpdatesContent" style="font-size: 0.85em; opacity: 0.7;">Click "Check for Updates" to scan requirements.txt files for outdated packages.</div>
+  </div>
+
   <div class="disclaimer">
     <strong>Disclaimer</strong><br>
     SecureScanner is a free tool provided by <strong>MaatInICT B.V.</strong> on an "as is" basis, without warranties or guarantees of any kind, either express or implied.
@@ -585,6 +636,17 @@ export class DashboardPanel {
       vscode.postMessage({ command: 'toggleTestEnvironment', value: e.target.checked });
     });
 
+    document.getElementById('checkPipUpdatesBtn').addEventListener('click', () => {
+      const btn = document.getElementById('checkPipUpdatesBtn');
+      const statusText = document.getElementById('pipUpdateStatusText');
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+      statusText.style.display = 'inline';
+      statusText.textContent = 'Querying package index...';
+      statusText.style.color = 'var(--vscode-descriptionForeground)';
+      vscode.postMessage({ command: 'checkPipUpdates' });
+    });
+
     document.getElementById('updateVulnDbBtn').addEventListener('click', () => {
       const btn = document.getElementById('updateVulnDbBtn');
       const statusText = document.getElementById('vulnDbStatusText');
@@ -611,6 +673,48 @@ export class DashboardPanel {
         if (message.status === 'done') {
           btn.disabled = false;
           btn.innerHTML = '&#128269; Scan Workspace';
+        }
+      }
+      if (message.type === 'pipUpdateStatus') {
+        const btn = document.getElementById('checkPipUpdatesBtn');
+        const statusText = document.getElementById('pipUpdateStatusText');
+        const content = document.getElementById('pipUpdatesContent');
+        if (message.status === 'done') {
+          btn.disabled = false;
+          btn.innerHTML = '&#128269; Check for Updates';
+          const packages = message.packages || [];
+          if (packages.length === 0) {
+            content.innerHTML = '<div style="padding: 12px; opacity: 0.7;">All pip packages are up to date.</div>';
+            statusText.style.display = 'inline';
+            statusText.textContent = 'All up to date!';
+            statusText.style.color = '#4caf50';
+          } else {
+            let html = '<div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 8px;">Source: ' + (message.indexUrl || 'PyPI') + '</div>';
+            html += '<table><thead><tr>';
+            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th>';
+            html += '</tr></thead><tbody>';
+            packages.forEach(function(pkg) {
+              html += '<tr>';
+              html += '<td><strong>' + pkg.name + '</strong></td>';
+              html += '<td><span class="severity-badge medium">' + pkg.currentVersion + '</span></td>';
+              html += '<td><span class="severity-badge info" style="background: #4caf50; color: white;">' + pkg.latestVersion + '</span></td>';
+              html += '</tr>';
+            });
+            html += '</tbody></table>';
+            content.innerHTML = html;
+            statusText.style.display = 'inline';
+            statusText.textContent = packages.length + ' update(s) available';
+            statusText.style.color = '#ff9800';
+          }
+          setTimeout(function() { statusText.style.display = 'none'; }, 5000);
+        }
+        if (message.status === 'error') {
+          btn.disabled = false;
+          btn.innerHTML = '&#128269; Check for Updates';
+          statusText.style.display = 'inline';
+          statusText.textContent = 'Check failed - verify connection and index URL';
+          statusText.style.color = '#f44336';
+          content.innerHTML = '<div style="padding: 12px; color: #f44336;">Failed to check for updates. Please verify your internet connection and pip index URL setting.</div>';
         }
       }
       if (message.type === 'vulnDbStatus') {

@@ -26,6 +26,8 @@ SecureScanner analyzes the code in your current workspace and flags potential se
 - **Sidebar tree view** — Browse findings by category in the VS Code activity bar
 - **Hover tooltips** — See finding details, CWE references, and OWASP IDs by hovering over flagged code
 - **Quick fixes** — Suppress findings, move secrets to environment variables, replace innerHTML with textContent
+- **Pip update checker** — Check requirements.txt packages for updates against PyPI or a custom Nexus/Artifactory index
+- **Comment detection** — Findings inside comments are automatically downgraded to Info severity to reduce false positives
 - **CVE database updates** — Fetch the latest vulnerability data from OSV.dev with one click
 - **Test environment mode** — Toggle to suppress findings that are common in test environments (e.g. `verify=False`, debug mode)
 - **Export reports** — Export all findings as JSON
@@ -54,6 +56,7 @@ JavaScript, TypeScript, Python, Java, PHP, and framework-specific patterns (Reac
 | `secureScanner.severityThreshold` | `Low` | Minimum severity level to report |
 | `secureScanner.ignorePaths` | `node_modules, dist, .git, out, build` | Glob patterns for paths to ignore |
 | `secureScanner.enabledCategories` | All categories | Which scanner categories to enable |
+| `secureScanner.pipIndexUrl` | `https://pypi.org/pypi` | Pip package index URL for update checks (use your Nexus/Artifactory URL for internal repos) |
 | `secureScanner.isTestEnvironment` | `false` | Suppress findings common in test environments (e.g. `verify=False`, debug mode) |
 | `secureScanner.maxFileSizeKB` | `512` | Maximum file size to scan (KB) |
 

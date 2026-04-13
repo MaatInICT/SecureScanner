@@ -74,6 +74,7 @@ export class ScannerEngine {
       maxFileSizeKB: config.get<number>('maxFileSizeKB', 512),
       projectType: config.get<ProjectType>('projectType', 'auto'),
       isTestEnvironment: config.get<boolean>('isTestEnvironment', false),
+      pipIndexUrl: config.get<string>('pipIndexUrl', 'https://pypi.org/pypi'),
     };
   }
 
