@@ -2027,6 +2027,9 @@ function offsetToPosition(offset, lineOffsets) {
 }
 function executeRule(rule, context, lineOffsets) {
   const findings = [];
+  if (context.isTestEnvironment && rule.testEnvironmentSafe) {
+    return findings;
+  }
   if (rule.languages && rule.languages.length > 0) {
     if (!rule.languages.includes(context.languageId)) {
       return findings;
@@ -2707,7 +2710,8 @@ var misconfigRules = [
     severity: 0 /* Critical */,
     category: "misconfiguration" /* Misconfiguration */,
     pattern: /(?:NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]?0|rejectUnauthorized\s*:\s*false|verify\s*=\s*False)/g,
-    cweId: "CWE-295"
+    cweId: "CWE-295",
+    testEnvironmentSafe: true
   },
   {
     id: "MISC-004",
@@ -2716,7 +2720,8 @@ var misconfigRules = [
     severity: 2 /* Medium */,
     category: "misconfiguration" /* Misconfiguration */,
     pattern: /(?:DEBUG\s*[:=]\s*(?:true|True|1|['"]true['"])|app\.debug\s*=\s*True)/g,
-    cweId: "CWE-215"
+    cweId: "CWE-215",
+    testEnvironmentSafe: true
   },
   {
     id: "MISC-005",
@@ -3295,7 +3300,8 @@ var ScannerEngine = class {
         "filehygiene" /* FileHygiene */
       ]),
       maxFileSizeKB: config.get("maxFileSizeKB", 512),
-      projectType: config.get("projectType", "auto")
+      projectType: config.get("projectType", "auto"),
+      isTestEnvironment: config.get("isTestEnvironment", false)
     };
   }
   scanDocument(document) {
@@ -3318,7 +3324,8 @@ var ScannerEngine = class {
       filePath,
       content,
       languageId: document.languageId,
-      isGitProject
+      isGitProject,
+      isTestEnvironment: config.isTestEnvironment
     };
     const findings = [];
     const scanners = this.registry.getAll();
@@ -4019,6 +4026,9 @@ var DashboardPanel = class _DashboardPanel {
           case "updateVulnDb":
             this.updateVulnDb();
             break;
+          case "toggleTestEnvironment":
+            this.toggleTestEnvironment(message.value);
+            break;
         }
       },
       null,
@@ -4053,9 +4063,11 @@ var DashboardPanel = class _DashboardPanel {
     for (const findings of findingsMap.values()) {
       allFindings.push(...findings);
     }
+    const config = this.engine.getConfig();
     this.panel.webview.postMessage({
       type: "findings",
-      data: allFindings
+      data: allFindings,
+      isTestEnvironment: config.isTestEnvironment
     });
   }
   navigateToFinding(finding) {
@@ -4163,6 +4175,11 @@ var DashboardPanel = class _DashboardPanel {
       await vscode8.workspace.fs.writeFile(uri, content);
       vscode8.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
     }
+  }
+  async toggleTestEnvironment(value) {
+    const config = vscode8.workspace.getConfiguration("secureScanner");
+    await config.update("isTestEnvironment", value, vscode8.ConfigurationTarget.Workspace);
+    this.scanWorkspace();
   }
   getHtmlContent(extensionUri) {
     const nonce = getNonce();
@@ -4328,6 +4345,46 @@ var DashboardPanel = class _DashboardPanel {
       opacity: 0.6;
     }
     .empty-state h2 { margin-bottom: 8px; }
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85em;
+    }
+    .toggle-switch input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 36px;
+      height: 20px;
+      background: var(--vscode-input-background);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-switch input[type="checkbox"]::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--vscode-input-foreground);
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input[type="checkbox"]:checked {
+      background: var(--vscode-button-background);
+      border-color: var(--vscode-button-background);
+    }
+    .toggle-switch input[type="checkbox"]:checked::before {
+      transform: translateX(16px);
+    }
+    .toggle-switch label {
+      cursor: pointer;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -4364,6 +4421,11 @@ var DashboardPanel = class _DashboardPanel {
     <button id="exportBtn">&#128190; Export Report</button>
   </div>
   <div class="toolbar" style="margin-top: -8px; margin-bottom: 16px; border-top: 1px solid var(--vscode-panel-border); padding-top: 8px;">
+    <div class="toggle-switch">
+      <input type="checkbox" id="testEnvToggle" />
+      <label for="testEnvToggle">Test Environment</label>
+    </div>
+    <span style="opacity: 0.3; margin: 0 4px;">|</span>
     <span style="font-size: 0.85em; opacity: 0.7;">Vulnerability Database:</span>
     <span id="vulnDbInfo" style="font-size: 0.85em; opacity: 0.7;">Built-in rules loaded</span>
     <button id="updateVulnDbBtn" class="update-btn">&#127760; Update CVE Database</button>
@@ -4477,6 +4539,10 @@ var DashboardPanel = class _DashboardPanel {
     document.getElementById('exportBtn').addEventListener('click', () => {
       vscode.postMessage({ command: 'exportReport' });
     });
+    document.getElementById('testEnvToggle').addEventListener('change', (e) => {
+      vscode.postMessage({ command: 'toggleTestEnvironment', value: e.target.checked });
+    });
+
     document.getElementById('updateVulnDbBtn').addEventListener('click', () => {
       const btn = document.getElementById('updateVulnDbBtn');
       const statusText = document.getElementById('vulnDbStatusText');
@@ -4492,6 +4558,9 @@ var DashboardPanel = class _DashboardPanel {
       const message = event.data;
       if (message.type === 'findings') {
         allFindings = message.data;
+        if (message.isTestEnvironment !== undefined) {
+          document.getElementById('testEnvToggle').checked = message.isTestEnvironment;
+        }
         renderSummary(allFindings);
         applyFilters();
       }

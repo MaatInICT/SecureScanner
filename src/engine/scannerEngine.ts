@@ -73,6 +73,7 @@ export class ScannerEngine {
       ]),
       maxFileSizeKB: config.get<number>('maxFileSizeKB', 512),
       projectType: config.get<ProjectType>('projectType', 'auto'),
+      isTestEnvironment: config.get<boolean>('isTestEnvironment', false),
     };
   }
 
@@ -106,6 +107,7 @@ export class ScannerEngine {
       content,
       languageId: document.languageId,
       isGitProject,
+      isTestEnvironment: config.isTestEnvironment,
     };
 
     const findings: Finding[] = [];

@@ -42,6 +42,11 @@ function executeRule(
 ): Finding[] {
   const findings: Finding[] = [];
 
+  // Skip rules marked as safe in test environments
+  if (context.isTestEnvironment && rule.testEnvironmentSafe) {
+    return findings;
+  }
+
   // Check language filter
   if (rule.languages && rule.languages.length > 0) {
     if (!rule.languages.includes(context.languageId)) {
