@@ -691,13 +691,14 @@ export class DashboardPanel {
           } else {
             let html = '<div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 8px;">Source: ' + (message.indexUrl || 'PyPI') + '</div>';
             html += '<table><thead><tr>';
-            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th>';
+            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th><th>Source</th>';
             html += '</tr></thead><tbody>';
             packages.forEach(function(pkg) {
               html += '<tr>';
               html += '<td><strong>' + pkg.name + '</strong></td>';
               html += '<td><span class="severity-badge medium">' + pkg.currentVersion + '</span></td>';
               html += '<td><span class="severity-badge info" style="background: #4caf50; color: white;">' + pkg.latestVersion + '</span></td>';
+              html += '<td style="opacity: 0.7; font-size: 0.9em;">' + (pkg.source === 'installed' ? '&#128187; pip list' : '&#128196; requirements.txt') + '</td>';
               html += '</tr>';
             });
             html += '</tbody></table>';
