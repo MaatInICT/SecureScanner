@@ -10,4 +10,5 @@ export interface SecureScannerConfig {
   enabledCategories: FindingCategory[];
   maxFileSizeKB: number;
   projectType: ProjectType;
+  isTestEnvironment: boolean;
 }

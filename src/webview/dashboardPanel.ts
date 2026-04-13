@@ -42,6 +42,9 @@ export class DashboardPanel {
           case 'updateVulnDb':
             this.updateVulnDb();
             break;
+          case 'toggleTestEnvironment':
+            this.toggleTestEnvironment(message.value);
+            break;
         }
       },
       null,
@@ -85,9 +88,11 @@ export class DashboardPanel {
     for (const findings of findingsMap.values()) {
       allFindings.push(...findings);
     }
+    const config = this.engine.getConfig();
     this.panel.webview.postMessage({
       type: 'findings',
       data: allFindings,
+      isTestEnvironment: config.isTestEnvironment,
     });
   }
 
@@ -211,6 +216,12 @@ export class DashboardPanel {
       await vscode.workspace.fs.writeFile(uri, content);
       vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
     }
+  }
+
+  private async toggleTestEnvironment(value: boolean): Promise<void> {
+    const config = vscode.workspace.getConfiguration('secureScanner');
+    await config.update('isTestEnvironment', value, vscode.ConfigurationTarget.Workspace);
+    this.scanWorkspace();
   }
 
   private getHtmlContent(extensionUri: vscode.Uri): string {
@@ -376,6 +387,46 @@ export class DashboardPanel {
       opacity: 0.6;
     }
     .empty-state h2 { margin-bottom: 8px; }
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85em;
+    }
+    .toggle-switch input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 36px;
+      height: 20px;
+      background: var(--vscode-input-background);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-switch input[type="checkbox"]::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--vscode-input-foreground);
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input[type="checkbox"]:checked {
+      background: var(--vscode-button-background);
+      border-color: var(--vscode-button-background);
+    }
+    .toggle-switch input[type="checkbox"]:checked::before {
+      transform: translateX(16px);
+    }
+    .toggle-switch label {
+      cursor: pointer;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -412,6 +463,11 @@ export class DashboardPanel {
     <button id="exportBtn">&#128190; Export Report</button>
   </div>
   <div class="toolbar" style="margin-top: -8px; margin-bottom: 16px; border-top: 1px solid var(--vscode-panel-border); padding-top: 8px;">
+    <div class="toggle-switch">
+      <input type="checkbox" id="testEnvToggle" />
+      <label for="testEnvToggle">Test Environment</label>
+    </div>
+    <span style="opacity: 0.3; margin: 0 4px;">|</span>
     <span style="font-size: 0.85em; opacity: 0.7;">Vulnerability Database:</span>
     <span id="vulnDbInfo" style="font-size: 0.85em; opacity: 0.7;">Built-in rules loaded</span>
     <button id="updateVulnDbBtn" class="update-btn">&#127760; Update CVE Database</button>
@@ -525,6 +581,10 @@ export class DashboardPanel {
     document.getElementById('exportBtn').addEventListener('click', () => {
       vscode.postMessage({ command: 'exportReport' });
     });
+    document.getElementById('testEnvToggle').addEventListener('change', (e) => {
+      vscode.postMessage({ command: 'toggleTestEnvironment', value: e.target.checked });
+    });
+
     document.getElementById('updateVulnDbBtn').addEventListener('click', () => {
       const btn = document.getElementById('updateVulnDbBtn');
       const statusText = document.getElementById('vulnDbStatusText');
@@ -540,6 +600,9 @@ export class DashboardPanel {
       const message = event.data;
       if (message.type === 'findings') {
         allFindings = message.data;
+        if (message.isTestEnvironment !== undefined) {
+          document.getElementById('testEnvToggle').checked = message.isTestEnvironment;
+        }
         renderSummary(allFindings);
         applyFilters();
       }

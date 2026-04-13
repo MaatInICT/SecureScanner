@@ -2,7 +2,7 @@
   "name": "securescanner",
   "displayName": "SecureScanner",
   "description": "Scan your codebase for security vulnerabilities, credentials, OWASP Top 10, and misconfigurations",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "publisher": "MaatInICT",
   "engines": {
     "vscode": "^1.85.0"
@@ -132,6 +132,11 @@
             "Local project: skip all git-related checks (no .gitignore warnings)"
           ],
           "description": "Project type determines whether git-related security checks are performed. Use 'local' for codebases not under version control to avoid .gitignore-related findings."
+        },
+        "secureScanner.isTestEnvironment": {
+          "type": "boolean",
+          "default": false,
+          "description": "Mark this project as a test environment. Suppresses findings that are common in test setups (e.g. verify=False, debug mode enabled)."
         },
         "secureScanner.maxFileSizeKB": {
           "type": "number",

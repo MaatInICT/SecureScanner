@@ -28,6 +28,7 @@ export const misconfigRules: IScannerRule[] = [
     category: FindingCategory.Misconfiguration,
     pattern: /(?:NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]?0|rejectUnauthorized\s*:\s*false|verify\s*=\s*False)/g,
     cweId: 'CWE-295',
+    testEnvironmentSafe: true,
   },
   {
     id: 'MISC-004',
@@ -37,6 +38,7 @@ export const misconfigRules: IScannerRule[] = [
     category: FindingCategory.Misconfiguration,
     pattern: /(?:DEBUG\s*[:=]\s*(?:true|True|1|['"]true['"])|app\.debug\s*=\s*True)/g,
     cweId: 'CWE-215',
+    testEnvironmentSafe: true,
   },
   {
     id: 'MISC-005',

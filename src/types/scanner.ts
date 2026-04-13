@@ -11,6 +11,7 @@ export interface IScannerRule {
   filePatterns?: string[];
   cweId?: string;
   owaspId?: string;
+  testEnvironmentSafe?: boolean;
 }
 
 export interface ScanContext {
@@ -18,6 +19,7 @@ export interface ScanContext {
   content: string;
   languageId: string;
   isGitProject?: boolean;
+  isTestEnvironment?: boolean;
 }
 
 export interface IScanner {
