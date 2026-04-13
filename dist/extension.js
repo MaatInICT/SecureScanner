@@ -4095,6 +4095,7 @@ var vscode8 = __toESM(require("vscode"));
 var https2 = __toESM(require("https"));
 var http = __toESM(require("http"));
 var semver2 = __toESM(require_semver2());
+var import_child_process = require("child_process");
 function fetchLatestVersion(packageName, indexUrl) {
   const url = `${indexUrl.replace(/\/+$/, "")}/${encodeURIComponent(packageName)}/json`;
   return new Promise((resolve) => {
@@ -4142,17 +4143,59 @@ function parseRequirementsTxt(content) {
   }
   return packages;
 }
+function getInstalledPackages() {
+  const commands2 = [
+    { cmd: "pip", args: ["list", "--format=json"] },
+    { cmd: "pip3", args: ["list", "--format=json"] },
+    { cmd: "python", args: ["-m", "pip", "list", "--format=json"] },
+    { cmd: "python3", args: ["-m", "pip", "list", "--format=json"] }
+  ];
+  return tryCommands(commands2, 0);
+}
+function tryCommands(commands2, index) {
+  if (index >= commands2.length) {
+    return Promise.resolve([]);
+  }
+  const { cmd, args } = commands2[index];
+  return new Promise((resolve) => {
+    (0, import_child_process.execFile)(cmd, args, { timeout: 3e4 }, (error, stdout) => {
+      if (error || !stdout) {
+        tryCommands(commands2, index + 1).then(resolve);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stdout);
+        if (Array.isArray(parsed)) {
+          resolve(parsed.map((p) => ({
+            name: p.name,
+            version: p.version
+          })));
+          return;
+        }
+      } catch {
+      }
+      tryCommands(commands2, index + 1).then(resolve);
+    });
+  });
+}
 async function checkPipUpdates(indexUrl, progress) {
   const results = [];
-  const files = await vscode8.workspace.findFiles("**/requirements*.txt", "**/node_modules/**", 50);
   const allPackages = /* @__PURE__ */ new Map();
+  progress?.report({ message: "Reading installed packages (pip list)..." });
+  const installed = await getInstalledPackages();
+  for (const pkg of installed) {
+    allPackages.set(pkg.name.toLowerCase(), { version: pkg.version, source: "installed" });
+  }
+  progress?.report({ message: "Reading requirements.txt files..." });
+  const files = await vscode8.workspace.findFiles("**/requirements*.txt", "**/node_modules/**", 50);
   for (const file of files) {
     try {
       const doc = await vscode8.workspace.openTextDocument(file);
       const parsed = parseRequirementsTxt(doc.getText());
       for (const pkg of parsed) {
-        if (!allPackages.has(pkg.name.toLowerCase())) {
-          allPackages.set(pkg.name.toLowerCase(), pkg.version);
+        const key = pkg.name.toLowerCase();
+        if (!allPackages.has(key)) {
+          allPackages.set(key, { version: pkg.version, source: "requirements.txt" });
         }
       }
     } catch {
@@ -4163,7 +4206,7 @@ async function checkPipUpdates(indexUrl, progress) {
   }
   const total = allPackages.size;
   let processed = 0;
-  for (const [name, currentVersion] of allPackages) {
+  for (const [name, { version: currentVersion, source }] of allPackages) {
     progress?.report({
       message: `Checking ${name}... (${processed + 1}/${total})`,
       increment: 1 / total * 100
@@ -4178,7 +4221,8 @@ async function checkPipUpdates(indexUrl, progress) {
           name,
           currentVersion,
           latestVersion,
-          updateAvailable: true
+          updateAvailable: true,
+          source
         });
       }
     }
@@ -4837,13 +4881,14 @@ var DashboardPanel = class _DashboardPanel {
           } else {
             let html = '<div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 8px;">Source: ' + (message.indexUrl || 'PyPI') + '</div>';
             html += '<table><thead><tr>';
-            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th>';
+            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th><th>Source</th>';
             html += '</tr></thead><tbody>';
             packages.forEach(function(pkg) {
               html += '<tr>';
               html += '<td><strong>' + pkg.name + '</strong></td>';
               html += '<td><span class="severity-badge medium">' + pkg.currentVersion + '</span></td>';
               html += '<td><span class="severity-badge info" style="background: #4caf50; color: white;">' + pkg.latestVersion + '</span></td>';
+              html += '<td style="opacity: 0.7; font-size: 0.9em;">' + (pkg.source === 'installed' ? '&#128187; pip list' : '&#128196; requirements.txt') + '</td>';
               html += '</tr>';
             });
             html += '</tbody></table>';

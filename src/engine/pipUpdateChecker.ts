@@ -2,12 +2,14 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
 import * as semver from 'semver';
+import { execFile } from 'child_process';
 
 export interface PipPackageStatus {
   name: string;
   currentVersion: string;
   latestVersion: string;
   updateAvailable: boolean;
+  source: 'installed' | 'requirements.txt';
 }
 
 /**
@@ -34,7 +36,7 @@ function fetchLatestVersion(packageName: string, indexUrl: string): Promise<stri
       }
 
       let body = '';
-      res.on('data', (chunk) => body += chunk);
+      res.on('data', (chunk: string) => body += chunk);
       res.on('end', () => {
         try {
           const data = JSON.parse(body);
@@ -74,7 +76,58 @@ function parseRequirementsTxt(content: string): Array<{ name: string; version: s
 }
 
 /**
+ * Try to get installed packages via `pip list --format=json`.
+ * Tries pip, pip3, python -m pip, python3 -m pip in order.
+ */
+function getInstalledPackages(): Promise<Array<{ name: string; version: string }>> {
+  const commands: Array<{ cmd: string; args: string[] }> = [
+    { cmd: 'pip', args: ['list', '--format=json'] },
+    { cmd: 'pip3', args: ['list', '--format=json'] },
+    { cmd: 'python', args: ['-m', 'pip', 'list', '--format=json'] },
+    { cmd: 'python3', args: ['-m', 'pip', 'list', '--format=json'] },
+  ];
+
+  return tryCommands(commands, 0);
+}
+
+function tryCommands(
+  commands: Array<{ cmd: string; args: string[] }>,
+  index: number
+): Promise<Array<{ name: string; version: string }>> {
+  if (index >= commands.length) {
+    return Promise.resolve([]);
+  }
+
+  const { cmd, args } = commands[index];
+
+  return new Promise((resolve) => {
+    execFile(cmd, args, { timeout: 30000 }, (error, stdout) => {
+      if (error || !stdout) {
+        // Try next command
+        tryCommands(commands, index + 1).then(resolve);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(stdout);
+        if (Array.isArray(parsed)) {
+          resolve(parsed.map((p: { name: string; version: string }) => ({
+            name: p.name,
+            version: p.version,
+          })));
+          return;
+        }
+      } catch {
+        // Parse failed, try next
+      }
+      tryCommands(commands, index + 1).then(resolve);
+    });
+  });
+}
+
+/**
  * Check all pip packages in the workspace for available updates.
+ * Combines packages from pip list (installed) and requirements.txt files.
  */
 export async function checkPipUpdates(
   indexUrl: string,
@@ -82,19 +135,29 @@ export async function checkPipUpdates(
 ): Promise<PipPackageStatus[]> {
   const results: PipPackageStatus[] = [];
 
-  // Find all requirements.txt files in the workspace
-  const files = await vscode.workspace.findFiles('**/requirements*.txt', '**/node_modules/**', 50);
+  // Map of lowercase package name -> { version, source }
+  const allPackages = new Map<string, { version: string; source: 'installed' | 'requirements.txt' }>();
 
-  const allPackages = new Map<string, string>();
+  // 1. Try pip list for installed packages
+  progress?.report({ message: 'Reading installed packages (pip list)...' });
+  const installed = await getInstalledPackages();
+  for (const pkg of installed) {
+    allPackages.set(pkg.name.toLowerCase(), { version: pkg.version, source: 'installed' });
+  }
+
+  // 2. Read requirements.txt files in workspace
+  progress?.report({ message: 'Reading requirements.txt files...' });
+  const files = await vscode.workspace.findFiles('**/requirements*.txt', '**/node_modules/**', 50);
 
   for (const file of files) {
     try {
       const doc = await vscode.workspace.openTextDocument(file);
       const parsed = parseRequirementsTxt(doc.getText());
       for (const pkg of parsed) {
-        // Keep the first version found (or could take the highest)
-        if (!allPackages.has(pkg.name.toLowerCase())) {
-          allPackages.set(pkg.name.toLowerCase(), pkg.version);
+        const key = pkg.name.toLowerCase();
+        // requirements.txt overrides pip list (more specific to project)
+        if (!allPackages.has(key)) {
+          allPackages.set(key, { version: pkg.version, source: 'requirements.txt' });
         }
       }
     } catch {
@@ -109,7 +172,7 @@ export async function checkPipUpdates(
   const total = allPackages.size;
   let processed = 0;
 
-  for (const [name, currentVersion] of allPackages) {
+  for (const [name, { version: currentVersion, source }] of allPackages) {
     progress?.report({
       message: `Checking ${name}... (${processed + 1}/${total})`,
       increment: (1 / total) * 100,
@@ -128,6 +191,7 @@ export async function checkPipUpdates(
           currentVersion,
           latestVersion,
           updateAvailable: true,
+          source,
         });
       }
     }

@@ -5,7 +5,7 @@ All notable changes to SecureScanner will be documented in this file.
 ## [1.0.5] - 2026-04-13
 
 ### Added
-- **Pip package update checker** — Check requirements.txt packages for available updates against PyPI or a custom Nexus/Artifactory repository
+- **Pip package update checker** — Check installed packages (`pip list`) and requirements.txt for available updates against PyPI or a custom Nexus/Artifactory repository
 - New `secureScanner.pipIndexUrl` setting (default: `https://pypi.org/pypi`) for configuring internal package indexes
 - Dashboard section showing outdated pip packages with current vs latest version
 - **Comment detection** — Findings inside code comments are automatically downgraded to Info severity and marked with "(in comment)" to reduce false positives

@@ -26,7 +26,7 @@ SecureScanner analyzes the code in your current workspace and flags potential se
 - **Sidebar tree view** — Browse findings by category in the VS Code activity bar
 - **Hover tooltips** — See finding details, CWE references, and OWASP IDs by hovering over flagged code
 - **Quick fixes** — Suppress findings, move secrets to environment variables, replace innerHTML with textContent
-- **Pip update checker** — Check requirements.txt packages for updates against PyPI or a custom Nexus/Artifactory index
+- **Pip update checker** — Check installed packages (`pip list`) and requirements.txt for updates against PyPI or a custom Nexus/Artifactory index
 - **Comment detection** — Findings inside comments are automatically downgraded to Info severity to reduce false positives
 - **CVE database updates** — Fetch the latest vulnerability data from OSV.dev with one click
 - **Test environment mode** — Toggle to suppress findings that are common in test environments (e.g. `verify=False`, debug mode)
