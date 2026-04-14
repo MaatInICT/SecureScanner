@@ -2,7 +2,7 @@
 
 All notable changes to SecureScanner will be documented in this file.
 
-## [1.0.5] - 2026-04-13
+## [1.0.6] - 2026-04-14
 
 ### Added
 - **Pip package update checker** — Check installed packages (`pip list`) and requirements.txt for available updates against PyPI or a custom Nexus/Artifactory repository
