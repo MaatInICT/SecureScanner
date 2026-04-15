@@ -2,6 +2,11 @@
 
 All notable changes to SecureScanner will be documented in this file.
 
+## [1.1.2] - 2026-04-15
+
+### Fixed
+- **MISC-001 false positive on W3C namespaces** — Standard W3C namespace URLs (e.g. `http://www.w3.org/2000/svg`, `http://www.w3.org/1999/xhtml`) are no longer flagged as "Insecure HTTP URL". These namespaces are part of the XML/HTML specification and cannot be changed to HTTPS in web code.
+
 ## [1.1.1] - 2026-04-14
 
 ### Changed

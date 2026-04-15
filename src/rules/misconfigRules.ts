@@ -8,7 +8,7 @@ export const misconfigRules: IScannerRule[] = [
     description: 'Non-localhost HTTP URL detected. Use HTTPS for secure communication.',
     severity: Severity.Medium,
     category: FindingCategory.Misconfiguration,
-    pattern: /http:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0|::1)[a-zA-Z0-9][a-zA-Z0-9.-]+/g,
+    pattern: /http:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0|::1|www\.w3\.org\/)[a-zA-Z0-9][a-zA-Z0-9.-]+/g,
     cweId: 'CWE-319',
   },
   {
