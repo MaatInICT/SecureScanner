@@ -2,7 +2,7 @@
 
 **By MaatInICT B.V. — Quality Engineering & Identity Expertise**
 
-SecureScanner is a free Visual Studio Code extension that scans your open workspace for security vulnerabilities, hardcoded credentials, insecure coding patterns, and misconfigurations — all without leaving your editor.
+SecureScanner is a free Visual Studio Code extension that scans your open workspace for security vulnerabilities, hardcoded credentials, insecure coding patterns, and misconfigurations all without leaving your editor.
 
 ## What It Does
 
