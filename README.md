@@ -47,6 +47,12 @@ JavaScript, TypeScript, Python, Java, PHP, and framework-specific patterns (Reac
    - `SecureScanner: Scan Workspace`
    - `SecureScanner: Open Security Dashboard`
 
+## CVE Database Updates
+
+SecureScanner uses [OSV.dev](https://osv.dev), Google's open source vulnerability database, as its data source for known CVEs. OSV.dev aggregates vulnerability data from sources such as the National Vulnerability Database (NVD), GitHub Advisory Database, and ecosystem-specific advisories.
+
+When you click **Update CVE Database** in the Security Dashboard, SecureScanner queries the OSV.dev API for known vulnerabilities in popular npm and PyPI packages. The results — including CVE IDs, severity scores (CVSS), affected version ranges, and fix versions — are stored locally so that your dependency scans stay up to date without requiring an internet connection for every scan.
+
 ## Configuration
 
 | Setting | Default | Description |
