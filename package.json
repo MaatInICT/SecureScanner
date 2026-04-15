@@ -2,7 +2,7 @@
   "name": "securescanner",
   "displayName": "SecureScanner",
   "description": "Scan your codebase for security vulnerabilities, credentials, OWASP Top 10, and misconfigurations",
-  "version": "1.0.6",
+  "version": "1.1.1",
   "publisher": "MaatInICT",
   "engines": {
     "vscode": "^1.85.0"
@@ -142,6 +142,11 @@
           "type": "boolean",
           "default": false,
           "description": "Mark this project as a test environment. Suppresses findings that are common in test setups (e.g. verify=False, debug mode enabled)."
+        },
+        "secureScanner.excludeFolders": {
+          "type": "string",
+          "default": "results",
+          "description": "Folder names to exclude from scans, separated by ; (e.g. results;management;output). Each entry is matched as **/foldername/**. Leave empty to scan all folders."
         },
         "secureScanner.maxFileSizeKB": {
           "type": "number",

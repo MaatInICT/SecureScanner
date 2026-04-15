@@ -13,19 +13,23 @@ export interface PipPackageStatus {
 }
 
 /**
- * Fetch the latest version of a pip package from a PyPI-compatible index.
+ * Detect whether the index URL points to a Nexus Repository search API.
  */
-function fetchLatestVersion(packageName: string, indexUrl: string): Promise<string | null> {
-  const url = `${indexUrl.replace(/\/+$/, '')}/${encodeURIComponent(packageName)}/json`;
+function isNexusSearchUrl(indexUrl: string): boolean {
+  return /\/service\/rest\/v[0-9]+\/search\b/i.test(indexUrl);
+}
 
+/**
+ * Make an HTTP(S) GET request and return the response body as a string.
+ */
+function httpGet(url: string): Promise<string | null> {
   return new Promise((resolve) => {
     const client = url.startsWith('https') ? https : http;
 
     const req = client.get(url, (res) => {
-      // Follow redirects
+      // Follow redirects (up to one hop)
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        fetchLatestVersion(packageName, res.headers.location.replace(`/${packageName}/json`, ''))
-          .then(resolve);
+        httpGet(res.headers.location).then(resolve);
         return;
       }
 
@@ -37,14 +41,7 @@ function fetchLatestVersion(packageName: string, indexUrl: string): Promise<stri
 
       let body = '';
       res.on('data', (chunk: string) => body += chunk);
-      res.on('end', () => {
-        try {
-          const data = JSON.parse(body);
-          resolve(data.info?.version || null);
-        } catch {
-          resolve(null);
-        }
-      });
+      res.on('end', () => resolve(body));
     });
 
     req.on('error', () => resolve(null));
@@ -53,6 +50,89 @@ function fetchLatestVersion(packageName: string, indexUrl: string): Promise<stri
       resolve(null);
     });
   });
+}
+
+/**
+ * Fetch the latest version from a Nexus 3 Repository search API.
+ * Uses the /service/rest/v1/search endpoint with query parameters.
+ * Handles pagination via continuationToken to find the highest version.
+ */
+async function fetchLatestVersionFromNexus(packageName: string, searchUrl: string): Promise<string | null> {
+  const baseUrl = searchUrl.replace(/\/+$/, '');
+  let allVersions: string[] = [];
+  let continuationToken: string | null = null;
+
+  do {
+    const params = new URLSearchParams({
+      format: 'pypi',
+      name: packageName,
+    });
+    if (continuationToken) {
+      params.set('continuationToken', continuationToken);
+    }
+
+    const url = `${baseUrl}?${params.toString()}`;
+    const body = await httpGet(url);
+    if (!body) { break; }
+
+    try {
+      const data = JSON.parse(body);
+      if (Array.isArray(data.items)) {
+        for (const item of data.items) {
+          if (item.version) {
+            allVersions.push(item.version);
+          }
+        }
+      }
+      continuationToken = data.continuationToken || null;
+    } catch {
+      break;
+    }
+  } while (continuationToken);
+
+  if (allVersions.length === 0) {
+    return null;
+  }
+
+  // Sort versions using semver and return the highest
+  allVersions.sort((a, b) => {
+    const sa = semver.coerce(a);
+    const sb = semver.coerce(b);
+    if (sa && sb) { return semver.compare(sb, sa); }
+    return 0;
+  });
+
+  return allVersions[0];
+}
+
+/**
+ * Fetch the latest version from a standard PyPI-compatible JSON API.
+ */
+function fetchLatestVersionFromPyPI(packageName: string, indexUrl: string): Promise<string | null> {
+  const url = `${indexUrl.replace(/\/+$/, '')}/${encodeURIComponent(packageName)}/json`;
+
+  return new Promise((resolve) => {
+    const body = httpGet(url).then((data) => {
+      if (!data) { resolve(null); return; }
+      try {
+        const parsed = JSON.parse(data);
+        resolve(parsed.info?.version || null);
+      } catch {
+        resolve(null);
+      }
+    });
+  });
+}
+
+/**
+ * Fetch the latest version of a pip package from either a PyPI-compatible
+ * index or a Nexus Repository Manager search API.
+ */
+function fetchLatestVersion(packageName: string, indexUrl: string): Promise<string | null> {
+  if (isNexusSearchUrl(indexUrl)) {
+    return fetchLatestVersionFromNexus(packageName, indexUrl);
+  }
+  return fetchLatestVersionFromPyPI(packageName, indexUrl);
 }
 
 /**

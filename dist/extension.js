@@ -647,8 +647,8 @@ var require_compare = __commonJS({
   "node_modules/semver/functions/compare.js"(exports2, module2) {
     "use strict";
     var SemVer = require_semver();
-    var compare = (a, b, loose) => new SemVer(a, loose).compare(new SemVer(b, loose));
-    module2.exports = compare;
+    var compare2 = (a, b, loose) => new SemVer(a, loose).compare(new SemVer(b, loose));
+    module2.exports = compare2;
   }
 });
 
@@ -656,8 +656,8 @@ var require_compare = __commonJS({
 var require_rcompare = __commonJS({
   "node_modules/semver/functions/rcompare.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var rcompare = (a, b, loose) => compare(b, a, loose);
+    var compare2 = require_compare();
+    var rcompare = (a, b, loose) => compare2(b, a, loose);
     module2.exports = rcompare;
   }
 });
@@ -666,8 +666,8 @@ var require_rcompare = __commonJS({
 var require_compare_loose = __commonJS({
   "node_modules/semver/functions/compare-loose.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var compareLoose = (a, b) => compare(a, b, true);
+    var compare2 = require_compare();
+    var compareLoose = (a, b) => compare2(a, b, true);
     module2.exports = compareLoose;
   }
 });
@@ -710,8 +710,8 @@ var require_rsort = __commonJS({
 var require_gt = __commonJS({
   "node_modules/semver/functions/gt.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var gt = (a, b, loose) => compare(a, b, loose) > 0;
+    var compare2 = require_compare();
+    var gt = (a, b, loose) => compare2(a, b, loose) > 0;
     module2.exports = gt;
   }
 });
@@ -720,8 +720,8 @@ var require_gt = __commonJS({
 var require_lt = __commonJS({
   "node_modules/semver/functions/lt.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var lt3 = (a, b, loose) => compare(a, b, loose) < 0;
+    var compare2 = require_compare();
+    var lt3 = (a, b, loose) => compare2(a, b, loose) < 0;
     module2.exports = lt3;
   }
 });
@@ -730,8 +730,8 @@ var require_lt = __commonJS({
 var require_eq = __commonJS({
   "node_modules/semver/functions/eq.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var eq = (a, b, loose) => compare(a, b, loose) === 0;
+    var compare2 = require_compare();
+    var eq = (a, b, loose) => compare2(a, b, loose) === 0;
     module2.exports = eq;
   }
 });
@@ -740,8 +740,8 @@ var require_eq = __commonJS({
 var require_neq = __commonJS({
   "node_modules/semver/functions/neq.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var neq = (a, b, loose) => compare(a, b, loose) !== 0;
+    var compare2 = require_compare();
+    var neq = (a, b, loose) => compare2(a, b, loose) !== 0;
     module2.exports = neq;
   }
 });
@@ -750,8 +750,8 @@ var require_neq = __commonJS({
 var require_gte = __commonJS({
   "node_modules/semver/functions/gte.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var gte = (a, b, loose) => compare(a, b, loose) >= 0;
+    var compare2 = require_compare();
+    var gte = (a, b, loose) => compare2(a, b, loose) >= 0;
     module2.exports = gte;
   }
 });
@@ -760,8 +760,8 @@ var require_gte = __commonJS({
 var require_lte = __commonJS({
   "node_modules/semver/functions/lte.js"(exports2, module2) {
     "use strict";
-    var compare = require_compare();
-    var lte = (a, b, loose) => compare(a, b, loose) <= 0;
+    var compare2 = require_compare();
+    var lte = (a, b, loose) => compare2(a, b, loose) <= 0;
     module2.exports = lte;
   }
 });
@@ -1658,12 +1658,12 @@ var require_simplify = __commonJS({
   "node_modules/semver/ranges/simplify.js"(exports2, module2) {
     "use strict";
     var satisfies2 = require_satisfies();
-    var compare = require_compare();
+    var compare2 = require_compare();
     module2.exports = (versions, range, options) => {
       const set = [];
       let first = null;
       let prev = null;
-      const v = versions.sort((a, b) => compare(a, b, options));
+      const v = versions.sort((a, b) => compare2(a, b, options));
       for (const version of v) {
         const included = satisfies2(version, range, options);
         if (included) {
@@ -1711,7 +1711,7 @@ var require_subset = __commonJS({
     var Comparator = require_comparator();
     var { ANY } = Comparator;
     var satisfies2 = require_satisfies();
-    var compare = require_compare();
+    var compare2 = require_compare();
     var subset = (sub, dom, options = {}) => {
       if (sub === dom) {
         return true;
@@ -1771,7 +1771,7 @@ var require_subset = __commonJS({
       }
       let gtltComp;
       if (gt && lt3) {
-        gtltComp = compare(gt.semver, lt3.semver, options);
+        gtltComp = compare2(gt.semver, lt3.semver, options);
         if (gtltComp > 0) {
           return null;
         } else if (gtltComp === 0 && (gt.operator !== ">=" || lt3.operator !== "<=")) {
@@ -1851,14 +1851,14 @@ var require_subset = __commonJS({
       if (!a) {
         return b;
       }
-      const comp = compare(a.semver, b.semver, options);
+      const comp = compare2(a.semver, b.semver, options);
       return comp > 0 ? a : comp < 0 ? b : b.operator === ">" && a.operator === ">=" ? b : a;
     };
     var lowerLT = (a, b, options) => {
       if (!a) {
         return b;
       }
-      const comp = compare(a.semver, b.semver, options);
+      const comp = compare2(a.semver, b.semver, options);
       return comp < 0 ? a : comp > 0 ? b : b.operator === "<" && a.operator === "<=" ? b : a;
     };
     module2.exports = subset;
@@ -1882,7 +1882,7 @@ var require_semver2 = __commonJS({
     var minor = require_minor();
     var patch = require_patch();
     var prerelease = require_prerelease();
-    var compare = require_compare();
+    var compare2 = require_compare();
     var rcompare = require_rcompare();
     var compareLoose = require_compare_loose();
     var compareBuild = require_compare_build();
@@ -1920,7 +1920,7 @@ var require_semver2 = __commonJS({
       minor,
       patch,
       prerelease,
-      compare,
+      compare: compare2,
       rcompare,
       compareLoose,
       compareBuild,
@@ -3396,6 +3396,7 @@ var ScannerEngine = class {
       maxFileSizeKB: config.get("maxFileSizeKB", 512),
       projectType: config.get("projectType", "auto"),
       isTestEnvironment: config.get("isTestEnvironment", false),
+      excludeFolders: config.get("excludeFolders", "results"),
       pipIndexUrl: config.get("pipIndexUrl", "https://pypi.org/pypi")
     };
   }
@@ -3406,7 +3407,12 @@ var ScannerEngine = class {
     if (content.length > config.maxFileSizeKB * 1024) {
       return [];
     }
-    for (const pattern of config.ignorePaths) {
+    const effectiveIgnorePaths = [...config.ignorePaths];
+    const excludeFolders = config.excludeFolders.split(";").map((f) => f.trim()).filter((f) => f.length > 0);
+    for (const folder of excludeFolders) {
+      effectiveIgnorePaths.push(`**/${folder}/**`);
+    }
+    for (const pattern of effectiveIgnorePaths) {
       const globPattern = pattern.replace(/\*\*/g, ".*").replace(/\*/g, "[^/\\\\]*");
       if (new RegExp(globPattern).test(filePath.replace(/\\/g, "/"))) {
         return [];
@@ -3445,7 +3451,12 @@ var ScannerEngine = class {
     this.findingsMap.clear();
     const allFindings = [];
     const config = this.getConfig();
-    const ignorePattern = config.ignorePaths.length > 0 ? "{" + config.ignorePaths.join(",") + "}" : void 0;
+    const effectiveIgnorePaths = [...config.ignorePaths];
+    const excludeFolders = config.excludeFolders.split(";").map((f) => f.trim()).filter((f) => f.length > 0);
+    for (const folder of excludeFolders) {
+      effectiveIgnorePaths.push(`**/${folder}/**`);
+    }
+    const ignorePattern = effectiveIgnorePaths.length > 0 ? "{" + effectiveIgnorePaths.join(",") + "}" : void 0;
     const files = await vscode2.workspace.findFiles(
       "**/*",
       ignorePattern,
@@ -3530,6 +3541,20 @@ function severityToLabel(severity) {
       return "Low";
     case 4 /* Info */:
       return "Info";
+  }
+}
+function severityToIcon(severity) {
+  switch (severity) {
+    case 0 /* Critical */:
+      return "\u{1F534}";
+    case 1 /* High */:
+      return "\u{1F7E0}";
+    case 2 /* Medium */:
+      return "\u{1F7E1}";
+    case 3 /* Low */:
+      return "\u{1F535}";
+    case 4 /* Info */:
+      return "\u2139\uFE0F";
   }
 }
 
@@ -4096,13 +4121,15 @@ var https2 = __toESM(require("https"));
 var http = __toESM(require("http"));
 var semver2 = __toESM(require_semver2());
 var import_child_process = require("child_process");
-function fetchLatestVersion(packageName, indexUrl) {
-  const url = `${indexUrl.replace(/\/+$/, "")}/${encodeURIComponent(packageName)}/json`;
+function isNexusSearchUrl(indexUrl) {
+  return /\/service\/rest\/v[0-9]+\/search\b/i.test(indexUrl);
+}
+function httpGet(url) {
   return new Promise((resolve) => {
     const client = url.startsWith("https") ? https2 : http;
     const req = client.get(url, (res) => {
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        fetchLatestVersion(packageName, res.headers.location.replace(`/${packageName}/json`, "")).then(resolve);
+        httpGet(res.headers.location).then(resolve);
         return;
       }
       if (res.statusCode !== 200) {
@@ -4112,14 +4139,7 @@ function fetchLatestVersion(packageName, indexUrl) {
       }
       let body = "";
       res.on("data", (chunk) => body += chunk);
-      res.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          resolve(data.info?.version || null);
-        } catch {
-          resolve(null);
-        }
-      });
+      res.on("end", () => resolve(body));
     });
     req.on("error", () => resolve(null));
     req.setTimeout(1e4, () => {
@@ -4127,6 +4147,73 @@ function fetchLatestVersion(packageName, indexUrl) {
       resolve(null);
     });
   });
+}
+async function fetchLatestVersionFromNexus(packageName, searchUrl) {
+  const baseUrl = searchUrl.replace(/\/+$/, "");
+  let allVersions = [];
+  let continuationToken = null;
+  do {
+    const params = new URLSearchParams({
+      format: "pypi",
+      name: packageName
+    });
+    if (continuationToken) {
+      params.set("continuationToken", continuationToken);
+    }
+    const url = `${baseUrl}?${params.toString()}`;
+    const body = await httpGet(url);
+    if (!body) {
+      break;
+    }
+    try {
+      const data = JSON.parse(body);
+      if (Array.isArray(data.items)) {
+        for (const item of data.items) {
+          if (item.version) {
+            allVersions.push(item.version);
+          }
+        }
+      }
+      continuationToken = data.continuationToken || null;
+    } catch {
+      break;
+    }
+  } while (continuationToken);
+  if (allVersions.length === 0) {
+    return null;
+  }
+  allVersions.sort((a, b) => {
+    const sa = semver2.coerce(a);
+    const sb = semver2.coerce(b);
+    if (sa && sb) {
+      return semver2.compare(sb, sa);
+    }
+    return 0;
+  });
+  return allVersions[0];
+}
+function fetchLatestVersionFromPyPI(packageName, indexUrl) {
+  const url = `${indexUrl.replace(/\/+$/, "")}/${encodeURIComponent(packageName)}/json`;
+  return new Promise((resolve) => {
+    const body = httpGet(url).then((data) => {
+      if (!data) {
+        resolve(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(data);
+        resolve(parsed.info?.version || null);
+      } catch {
+        resolve(null);
+      }
+    });
+  });
+}
+function fetchLatestVersion(packageName, indexUrl) {
+  if (isNexusSearchUrl(indexUrl)) {
+    return fetchLatestVersionFromNexus(packageName, indexUrl);
+  }
+  return fetchLatestVersionFromPyPI(packageName, indexUrl);
 }
 function parseRequirementsTxt(content) {
   const packages = [];
@@ -4254,9 +4341,6 @@ var DashboardPanel = class _DashboardPanel {
           case "scanWorkspace":
             this.scanWorkspace();
             break;
-          case "scanFile":
-            this.scanCurrentFile();
-            break;
           case "exportReport":
             this.exportReport();
             break;
@@ -4268,6 +4352,9 @@ var DashboardPanel = class _DashboardPanel {
             break;
           case "checkPipUpdates":
             this.checkPipUpdates();
+            break;
+          case "updatePipPackage":
+            this.updatePipPackage(message.packageName);
             break;
         }
       },
@@ -4335,16 +4422,6 @@ var DashboardPanel = class _DashboardPanel {
       }
     );
   }
-  scanCurrentFile() {
-    const editor = vscode9.window.activeTextEditor;
-    if (editor) {
-      const findings = this.engine.scanDocument(editor.document);
-      this.panel.webview.postMessage({ type: "scanStatus", status: "done", count: findings.length });
-      this.refresh();
-    } else {
-      vscode9.window.showWarningMessage("SecureScanner: No active file to scan.");
-    }
-  }
   async updateVulnDb() {
     this.panel.webview.postMessage({ type: "vulnDbStatus", status: "updating" });
     try {
@@ -4401,17 +4478,158 @@ var DashboardPanel = class _DashboardPanel {
     for (const findings of findingsMap.values()) {
       allFindings.push(...findings);
     }
-    const report = {
-      generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-      totalFindings: allFindings.length,
-      findings: allFindings
+    allFindings.sort((a, b) => a.severity - b.severity);
+    const now = /* @__PURE__ */ new Date();
+    const dateStr = now.toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    const workspaceName = vscode9.workspace.workspaceFolders?.[0]?.name || "Unknown Project";
+    const severityCounts = {
+      critical: allFindings.filter((f) => f.severity === 0 /* Critical */).length,
+      high: allFindings.filter((f) => f.severity === 1 /* High */).length,
+      medium: allFindings.filter((f) => f.severity === 2 /* Medium */).length,
+      low: allFindings.filter((f) => f.severity === 3 /* Low */).length,
+      info: allFindings.filter((f) => f.severity === 4 /* Info */).length
     };
+    const categoryCounts = {};
+    for (const f of allFindings) {
+      categoryCounts[f.category] = (categoryCounts[f.category] || 0) + 1;
+    }
+    const categoryLabel2 = (cat) => {
+      switch (cat) {
+        case "credential" /* Credential */:
+          return "Credentials";
+        case "owasp" /* OWASP */:
+          return "OWASP";
+        case "dependency" /* Dependency */:
+          return "Dependencies";
+        case "misconfiguration" /* Misconfiguration */:
+          return "Misconfiguration";
+        case "filehygiene" /* FileHygiene */:
+          return "File Hygiene";
+        default:
+          return cat;
+      }
+    };
+    const sevClass = (s) => {
+      switch (s) {
+        case 0 /* Critical */:
+          return "critical";
+        case 1 /* High */:
+          return "high";
+        case 2 /* Medium */:
+          return "medium";
+        case 3 /* Low */:
+          return "low";
+        case 4 /* Info */:
+          return "info";
+      }
+    };
+    const escHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const findingsRows = allFindings.map((f) => {
+      const relPath = vscode9.workspace.asRelativePath(f.location.filePath);
+      const cwe = f.cweId ? `<span class="cwe">CWE: ${escHtml(f.cweId)}</span>` : "";
+      return `<tr>
+        <td><span class="badge ${sevClass(f.severity)}">${severityToIcon(f.severity)} ${severityToLabel(f.severity)}</span></td>
+        <td><strong>${escHtml(f.title)}</strong><br><span class="desc">${escHtml(f.description)}</span></td>
+        <td>${escHtml(categoryLabel2(f.category))}</td>
+        <td class="file-path">${escHtml(relPath)}:${f.location.startLine}</td>
+        <td>${cwe}</td>
+      </tr>`;
+    }).join("\n");
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureScanner Report - ${escHtml(workspaceName)}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #e0e0e0; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  header { background: linear-gradient(135deg, #16213e, #0f3460); border-radius: 12px; padding: 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; }
+  header .logo { font-size: 2.5em; }
+  header h1 { font-size: 1.8em; color: #fff; }
+  header p { color: #8892b0; font-size: 0.95em; }
+  .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: #16213e; border-radius: 10px; padding: 20px; text-align: center; border: 1px solid #1a1a40; }
+  .card .number { font-size: 2.2em; font-weight: 700; }
+  .card .label { font-size: 0.85em; color: #8892b0; margin-top: 4px; }
+  .card.critical .number { color: #f44336; }
+  .card.high .number { color: #ff9800; }
+  .card.medium .number { color: #ffc107; }
+  .card.low .number { color: #2196f3; }
+  .card.info .number { color: #9e9e9e; }
+  .card.total .number { color: #fff; }
+  .section { background: #16213e; border-radius: 10px; padding: 24px; margin-bottom: 24px; border: 1px solid #1a1a40; }
+  .section h2 { font-size: 1.3em; margin-bottom: 16px; color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  th { text-align: left; padding: 10px 12px; background: #0f3460; border-bottom: 2px solid #1a1a40; color: #ccd6f6; font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid #1a1a40; vertical-align: top; }
+  tr:hover { background: rgba(255,255,255,0.03); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.8em; font-weight: 700; white-space: nowrap; }
+  .badge.critical { background: #f44336; color: #fff; }
+  .badge.high { background: #ff9800; color: #fff; }
+  .badge.medium { background: #ffc107; color: #333; }
+  .badge.low { background: #2196f3; color: #fff; }
+  .badge.info { background: #9e9e9e; color: #fff; }
+  .desc { color: #8892b0; font-size: 0.85em; }
+  .cwe { background: #2a2a4a; padding: 2px 8px; border-radius: 3px; font-size: 0.8em; color: #8892b0; }
+  .file-path { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85em; color: #64ffda; word-break: break-all; }
+  .category-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .category-tag { background: #0f3460; padding: 6px 14px; border-radius: 6px; font-size: 0.85em; }
+  .category-tag strong { color: #64ffda; }
+  footer { text-align: center; padding: 20px; color: #555; font-size: 0.8em; }
+  .no-findings { text-align: center; padding: 40px; color: #4caf50; font-size: 1.1em; }
+  @media print { body { background: #fff; color: #333; } .container { max-width: 100%; } header { background: #f5f5f5; } .section { background: #fff; border: 1px solid #ddd; } td, th { color: #333; } .desc { color: #666; } .file-path { color: #00695c; } tr:hover { background: transparent; } }
+  @media (max-width: 768px) { .summary-cards { grid-template-columns: repeat(2, 1fr); } header { flex-direction: column; text-align: center; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">\u{1F6E1}\uFE0F</div>
+    <div>
+      <h1>SecureScanner Security Report</h1>
+      <p>Project: <strong>${escHtml(workspaceName)}</strong> &mdash; Generated: ${escHtml(dateStr)}</p>
+    </div>
+  </header>
+
+  <div class="summary-cards">
+    <div class="card total"><div class="number">${allFindings.length}</div><div class="label">Total Findings</div></div>
+    <div class="card critical"><div class="number">${severityCounts.critical}</div><div class="label">Critical</div></div>
+    <div class="card high"><div class="number">${severityCounts.high}</div><div class="label">High</div></div>
+    <div class="card medium"><div class="number">${severityCounts.medium}</div><div class="label">Medium</div></div>
+    <div class="card low"><div class="number">${severityCounts.low}</div><div class="label">Low</div></div>
+    <div class="card info"><div class="number">${severityCounts.info}</div><div class="label">Info</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Categories</h2>
+    <div class="category-bar">
+      ${Object.entries(categoryCounts).map(([cat, count]) => `<div class="category-tag"><strong>${count}</strong> ${escHtml(categoryLabel2(cat))}</div>`).join("\n      ")}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Findings</h2>
+    ${allFindings.length === 0 ? '<div class="no-findings">\u2705 No security findings detected!</div>' : `
+    <table>
+      <thead><tr><th>Severity</th><th>Finding</th><th>Category</th><th>Location</th><th>CWE</th></tr></thead>
+      <tbody>${findingsRows}</tbody>
+    </table>`}
+  </div>
+
+  <footer>
+    Generated by SecureScanner for VS Code &mdash; ${escHtml(now.toISOString())}
+  </footer>
+</div>
+</body>
+</html>`;
     const uri = await vscode9.window.showSaveDialog({
-      filters: { "JSON": ["json"] },
-      defaultUri: vscode9.Uri.file("security-report.json")
+      filters: { "HTML Report": ["html"] },
+      defaultUri: vscode9.Uri.file("security-report.html")
     });
     if (uri) {
-      const content = Buffer.from(JSON.stringify(report, null, 2), "utf8");
+      const content = Buffer.from(html, "utf8");
       await vscode9.workspace.fs.writeFile(uri, content);
       vscode9.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
     }
@@ -4450,6 +4668,18 @@ var DashboardPanel = class _DashboardPanel {
       );
     }
   }
+  async updatePipPackage(packageName) {
+    const terminal = vscode9.window.createTerminal({ name: `pip upgrade ${packageName}` });
+    terminal.show();
+    terminal.sendText(`pip install --upgrade ${packageName}`);
+    this.panel.webview.postMessage({
+      type: "pipPackageUpdateStarted",
+      packageName
+    });
+    vscode9.window.showInformationMessage(
+      `SecureScanner: Upgrading ${packageName} in terminal. Run "Check for Updates" again after installation completes.`
+    );
+  }
   async toggleTestEnvironment(value) {
     const config = vscode9.workspace.getConfiguration("secureScanner");
     await config.update("isTestEnvironment", value, vscode9.ConfigurationTarget.Workspace);
@@ -4457,8 +4687,11 @@ var DashboardPanel = class _DashboardPanel {
   }
   getHtmlContent(extensionUri) {
     const nonce = getNonce();
-    const logoUri = this.panel.webview.asWebviewUri(
-      vscode9.Uri.joinPath(extensionUri, "media", "logo.svg")
+    const shieldUri = this.panel.webview.asWebviewUri(
+      vscode9.Uri.joinPath(extensionUri, "media", "shield-only.svg")
+    );
+    const maatLogoUri = this.panel.webview.asWebviewUri(
+      vscode9.Uri.joinPath(extensionUri, "media", "SecureScannerLogo.png")
     );
     return (
       /*html*/
@@ -4485,10 +4718,6 @@ var DashboardPanel = class _DashboardPanel {
       padding-bottom: 16px;
       border-bottom: 1px solid var(--vscode-panel-border);
     }
-    .branding-header img {
-      height: 52px;
-      width: auto;
-    }
     .branding-header .branding-text {
       display: flex;
       flex-direction: column;
@@ -4501,6 +4730,33 @@ var DashboardPanel = class _DashboardPanel {
     .branding-header .branding-sub {
       font-size: 0.8em;
       opacity: 0.6;
+    }
+    .shield-logo {
+      position: relative;
+      width: 60px;
+      height: 69px;
+      flex-shrink: 0;
+    }
+    .shield-logo .shield-bg {
+      width: 100%;
+      height: 100%;
+    }
+    .shield-logo .inner-logo {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      width: 32px;
+      height: 32px;
+      transform: translate(-50%, -50%);
+      border-radius: 4px;
+      transition: transform 0.3s ease;
+    }
+    .shield-logo.scanning .inner-logo {
+      animation: spinLogo 1.5s linear infinite;
+    }
+    @keyframes spinLogo {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     .disclaimer {
       margin-top: 32px;
@@ -4613,6 +4869,34 @@ var DashboardPanel = class _DashboardPanel {
     }
     .update-btn:hover { background: #2e7d32 !important; }
     .update-btn:disabled { background: #666 !important; opacity: 0.6; }
+    .check-updates-btn {
+      background: var(--vscode-button-background) !important;
+      color: var(--vscode-button-foreground) !important;
+      font-weight: bold;
+      font-size: 0.95em;
+      padding: 8px 18px !important;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .check-updates-btn:hover { background: var(--vscode-button-hoverBackground) !important; }
+    .check-updates-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pkg-update-btn {
+      background: #388e3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .pkg-update-btn:hover { background: #2e7d32; }
+    .pkg-update-btn:disabled { background: #666; opacity: 0.5; cursor: not-allowed; }
     .empty-state {
       text-align: center;
       padding: 60px 20px;
@@ -4663,9 +4947,12 @@ var DashboardPanel = class _DashboardPanel {
 </head>
 <body>
   <div class="branding-header">
-    <img src="${logoUri}" alt="MaatInICT" />
+    <div class="shield-logo" id="shieldLogo">
+      <img class="shield-bg" src="${shieldUri}" alt="SecureScanner Shield" />
+      <img class="inner-logo" src="${maatLogoUri}" alt="MaatInICT" />
+    </div>
     <div class="branding-text">
-      <span class="branding-title">&#128737; SecureScanner</span>
+      <span class="branding-title">SecureScanner</span>
       <span class="branding-sub">Powered by MaatInICT B.V. &mdash; Quality Engineering &amp; Identity Expertise</span>
     </div>
   </div>
@@ -4690,8 +4977,7 @@ var DashboardPanel = class _DashboardPanel {
     </select>
     <input type="text" id="searchInput" placeholder="Search findings...">
     <button id="scanWorkspaceBtn" class="primary-btn">&#128269; Scan Workspace</button>
-    <button id="scanFileBtn">&#128196; Scan Current File</button>
-    <button id="refreshBtn">&#8635; Refresh</button>
+<button id="refreshBtn">&#8635; Refresh</button>
     <button id="exportBtn">&#128190; Export Report</button>
   </div>
   <div class="toolbar" style="margin-top: -8px; margin-bottom: 16px; border-top: 1px solid var(--vscode-panel-border); padding-top: 8px;">
@@ -4710,7 +4996,7 @@ var DashboardPanel = class _DashboardPanel {
   <div style="margin-top: 24px; border-top: 2px solid var(--vscode-panel-border); padding-top: 16px;">
     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
       <h2 style="margin: 0; font-size: 1.2em;">&#128230; Pip Package Updates</h2>
-      <button id="checkPipUpdatesBtn" class="update-btn">&#128269; Check for Updates</button>
+      <button id="checkPipUpdatesBtn" class="check-updates-btn">&#128269; Check for Updates</button>
       <span id="pipUpdateStatusText" style="font-size: 0.85em; display: none;"></span>
     </div>
     <div id="pipUpdatesContent" style="font-size: 0.85em; opacity: 0.7;">Click "Check for Updates" to scan requirements.txt files for outdated packages.</div>
@@ -4811,10 +5097,8 @@ var DashboardPanel = class _DashboardPanel {
     document.getElementById('scanWorkspaceBtn').addEventListener('click', () => {
       document.getElementById('scanWorkspaceBtn').disabled = true;
       document.getElementById('scanWorkspaceBtn').textContent = 'Scanning...';
+      document.getElementById('shieldLogo').classList.add('scanning');
       vscode.postMessage({ command: 'scanWorkspace' });
-    });
-    document.getElementById('scanFileBtn').addEventListener('click', () => {
-      vscode.postMessage({ command: 'scanFile' });
     });
     document.getElementById('refreshBtn').addEventListener('click', () => {
       vscode.postMessage({ command: 'refresh' });
@@ -4825,7 +5109,6 @@ var DashboardPanel = class _DashboardPanel {
     document.getElementById('testEnvToggle').addEventListener('change', (e) => {
       vscode.postMessage({ command: 'toggleTestEnvironment', value: e.target.checked });
     });
-
     document.getElementById('checkPipUpdatesBtn').addEventListener('click', () => {
       const btn = document.getElementById('checkPipUpdatesBtn');
       const statusText = document.getElementById('pipUpdateStatusText');
@@ -4863,12 +5146,17 @@ var DashboardPanel = class _DashboardPanel {
         if (message.status === 'done') {
           btn.disabled = false;
           btn.innerHTML = '&#128269; Scan Workspace';
+          document.getElementById('shieldLogo').classList.remove('scanning');
         }
       }
       if (message.type === 'pipUpdateStatus') {
         const btn = document.getElementById('checkPipUpdatesBtn');
         const statusText = document.getElementById('pipUpdateStatusText');
         const content = document.getElementById('pipUpdatesContent');
+        if (message.status === 'checking') {
+          btn.disabled = true;
+          btn.textContent = 'Checking...';
+        }
         if (message.status === 'done') {
           btn.disabled = false;
           btn.innerHTML = '&#128269; Check for Updates';
@@ -4881,7 +5169,7 @@ var DashboardPanel = class _DashboardPanel {
           } else {
             let html = '<div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 8px;">Source: ' + (message.indexUrl || 'PyPI') + '</div>';
             html += '<table><thead><tr>';
-            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th><th>Source</th>';
+            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th><th>Source</th><th>Action</th>';
             html += '</tr></thead><tbody>';
             packages.forEach(function(pkg) {
               html += '<tr>';
@@ -4889,10 +5177,19 @@ var DashboardPanel = class _DashboardPanel {
               html += '<td><span class="severity-badge medium">' + pkg.currentVersion + '</span></td>';
               html += '<td><span class="severity-badge info" style="background: #4caf50; color: white;">' + pkg.latestVersion + '</span></td>';
               html += '<td style="opacity: 0.7; font-size: 0.9em;">' + (pkg.source === 'installed' ? '&#128187; pip list' : '&#128196; requirements.txt') + '</td>';
+              html += '<td><button class="pkg-update-btn" data-pkg="' + pkg.name + '">&#11014; Update</button></td>';
               html += '</tr>';
             });
             html += '</tbody></table>';
             content.innerHTML = html;
+            content.querySelectorAll('.pkg-update-btn').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var pkgName = btn.getAttribute('data-pkg');
+                btn.disabled = true;
+                btn.textContent = 'Updating...';
+                vscode.postMessage({ command: 'updatePipPackage', packageName: pkgName });
+              });
+            });
             statusText.style.display = 'inline';
             statusText.textContent = packages.length + ' update(s) available';
             statusText.style.color = '#ff9800';
@@ -4906,6 +5203,13 @@ var DashboardPanel = class _DashboardPanel {
           statusText.textContent = 'Check failed - verify connection and index URL';
           statusText.style.color = '#f44336';
           content.innerHTML = '<div style="padding: 12px; color: #f44336;">Failed to check for updates. Please verify your internet connection and pip index URL setting.</div>';
+        }
+      }
+      if (message.type === 'pipPackageUpdateStarted') {
+        var updatingBtn = document.querySelector('.pkg-update-btn[data-pkg="' + message.packageName + '"]');
+        if (updatingBtn) {
+          updatingBtn.disabled = true;
+          updatingBtn.textContent = 'Opened in terminal';
         }
       }
       if (message.type === 'vulnDbStatus') {

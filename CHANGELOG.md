@@ -2,6 +2,33 @@
 
 All notable changes to SecureScanner will be documented in this file.
 
+## [1.1.1] - 2026-04-14
+
+### Changed
+- **HTML report export** — Export report is now a styled HTML page instead of raw JSON. The report includes summary cards per severity, category breakdown, and a full findings table with CWE references. Can be opened in any browser and shared directly with colleagues. Print-friendly styling included for PDF export via the browser.
+
+## [1.1.0] - 2026-04-14
+
+### Added
+- **Exclude Folders setting** — New setting `secureScanner.excludeFolders` (default: `["results"]`) to skip specific folders during scans. Add folder names like `results` or `management` via VS Code settings (Ctrl+,) and the scanner will automatically exclude them. Prevents false positives from Robot Framework HTML/XML reports and other generated files (e.g. MISC-001 Insecure HTTP URL)
+
+## [1.0.8] - 2026-04-14
+
+### Added
+- **Per-package update button** — Each outdated pip package now has an "Update" button that opens a VS Code terminal and runs `pip install --upgrade <package>`
+- New "Action" column in the pip package updates table
+
+### Changed
+- **Redesigned "Check for Updates" button** — Now uses proper VS Code button styling (matching "Scan Workspace") instead of the previous link-style appearance
+
+## [1.0.7] - 2026-04-14
+
+### Fixed
+- **Nexus Repository support for pip update checker** — The pip update checker now correctly queries Nexus 3 Repository Manager search API (`/service/rest/v1/search?format=pypi&name=...`) instead of constructing an invalid PyPI-style URL path
+- Automatic detection of Nexus search endpoints vs standard PyPI indexes based on the configured URL
+- Pagination support via Nexus `continuationToken` to retrieve all available versions
+- Semver-based sorting to reliably determine the latest version from Nexus results
+
 ## [1.0.6] - 2026-04-14
 
 ### Added
@@ -71,5 +98,5 @@ All notable changes to SecureScanner will be documented in this file.
 - **Code Action Provider** — Quick fixes for suppression, env var migration, and textContent replacement
 - **Auto-scanning** — On file open, save, and editor change (300ms debounce)
 - **Workspace scanning** — Bulk scan up to 5,000 files
-- **JSON report export**
+- **Report export**
 - Configurable severity threshold, ignore paths, enabled categories, and max file size

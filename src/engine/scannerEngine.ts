@@ -74,6 +74,7 @@ export class ScannerEngine {
       maxFileSizeKB: config.get<number>('maxFileSizeKB', 512),
       projectType: config.get<ProjectType>('projectType', 'auto'),
       isTestEnvironment: config.get<boolean>('isTestEnvironment', false),
+      excludeFolders: config.get<string>('excludeFolders', 'results'),
       pipIndexUrl: config.get<string>('pipIndexUrl', 'https://pypi.org/pypi'),
     };
   }
@@ -88,8 +89,18 @@ export class ScannerEngine {
       return [];
     }
 
+    // Build effective ignore paths (add excludeFolders as glob patterns)
+    const effectiveIgnorePaths = [...config.ignorePaths];
+    const excludeFolders = config.excludeFolders
+      .split(';')
+      .map(f => f.trim())
+      .filter(f => f.length > 0);
+    for (const folder of excludeFolders) {
+      effectiveIgnorePaths.push(`**/${folder}/**`);
+    }
+
     // Check ignore paths
-    for (const pattern of config.ignorePaths) {
+    for (const pattern of effectiveIgnorePaths) {
       const globPattern = pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/\\\\]*');
       if (new RegExp(globPattern).test(filePath.replace(/\\/g, '/'))) {
         return [];
@@ -139,8 +150,17 @@ export class ScannerEngine {
     const allFindings: Finding[] = [];
     const config = this.getConfig();
 
-    const ignorePattern = config.ignorePaths.length > 0
-      ? '{' + config.ignorePaths.join(',') + '}'
+    const effectiveIgnorePaths = [...config.ignorePaths];
+    const excludeFolders = config.excludeFolders
+      .split(';')
+      .map(f => f.trim())
+      .filter(f => f.length > 0);
+    for (const folder of excludeFolders) {
+      effectiveIgnorePaths.push(`**/${folder}/**`);
+    }
+
+    const ignorePattern = effectiveIgnorePaths.length > 0
+      ? '{' + effectiveIgnorePaths.join(',') + '}'
       : undefined;
 
     const files = await vscode.workspace.findFiles(
