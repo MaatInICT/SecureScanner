@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Finding } from '../types/finding';
+import { Finding, Severity, FindingCategory } from '../types/finding';
 import { ScannerEngine } from '../engine/scannerEngine';
+import { severityToLabel, severityToIcon } from '../utils/configManager';
 import { fetchVulnerabilityUpdates } from '../engine/vulnDbUpdater';
 import { checkPipUpdates, PipPackageStatus } from '../engine/pipUpdateChecker';
 
@@ -34,9 +35,6 @@ export class DashboardPanel {
           case 'scanWorkspace':
             this.scanWorkspace();
             break;
-          case 'scanFile':
-            this.scanCurrentFile();
-            break;
           case 'exportReport':
             this.exportReport();
             break;
@@ -48,6 +46,9 @@ export class DashboardPanel {
             break;
           case 'checkPipUpdates':
             this.checkPipUpdates();
+            break;
+          case 'updatePipPackage':
+            this.updatePipPackage(message.packageName);
             break;
         }
       },
@@ -127,16 +128,6 @@ export class DashboardPanel {
     );
   }
 
-  private scanCurrentFile(): void {
-    const editor = vscode.window.activeTextEditor;
-    if (editor) {
-      const findings = this.engine.scanDocument(editor.document);
-      this.panel.webview.postMessage({ type: 'scanStatus', status: 'done', count: findings.length });
-      this.refresh();
-    } else {
-      vscode.window.showWarningMessage('SecureScanner: No active file to scan.');
-    }
-  }
 
   private async updateVulnDb(): Promise<void> {
     this.panel.webview.postMessage({ type: 'vulnDbStatus', status: 'updating' });
@@ -204,19 +195,158 @@ export class DashboardPanel {
       allFindings.push(...findings);
     }
 
-    const report = {
-      generatedAt: new Date().toISOString(),
-      totalFindings: allFindings.length,
-      findings: allFindings,
+    // Sort by severity (critical first)
+    allFindings.sort((a, b) => a.severity - b.severity);
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const workspaceName = vscode.workspace.workspaceFolders?.[0]?.name || 'Unknown Project';
+
+    const severityCounts = {
+      critical: allFindings.filter(f => f.severity === Severity.Critical).length,
+      high: allFindings.filter(f => f.severity === Severity.High).length,
+      medium: allFindings.filter(f => f.severity === Severity.Medium).length,
+      low: allFindings.filter(f => f.severity === Severity.Low).length,
+      info: allFindings.filter(f => f.severity === Severity.Info).length,
     };
 
+    const categoryCounts: Record<string, number> = {};
+    for (const f of allFindings) {
+      categoryCounts[f.category] = (categoryCounts[f.category] || 0) + 1;
+    }
+
+    const categoryLabel = (cat: string): string => {
+      switch (cat) {
+        case FindingCategory.Credential: return 'Credentials';
+        case FindingCategory.OWASP: return 'OWASP';
+        case FindingCategory.Dependency: return 'Dependencies';
+        case FindingCategory.Misconfiguration: return 'Misconfiguration';
+        case FindingCategory.FileHygiene: return 'File Hygiene';
+        default: return cat;
+      }
+    };
+
+    const sevClass = (s: Severity): string => {
+      switch (s) {
+        case Severity.Critical: return 'critical';
+        case Severity.High: return 'high';
+        case Severity.Medium: return 'medium';
+        case Severity.Low: return 'low';
+        case Severity.Info: return 'info';
+      }
+    };
+
+    const escHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const findingsRows = allFindings.map(f => {
+      const relPath = vscode.workspace.asRelativePath(f.location.filePath);
+      const cwe = f.cweId ? `<span class="cwe">CWE: ${escHtml(f.cweId)}</span>` : '';
+      return `<tr>
+        <td><span class="badge ${sevClass(f.severity)}">${severityToIcon(f.severity)} ${severityToLabel(f.severity)}</span></td>
+        <td><strong>${escHtml(f.title)}</strong><br><span class="desc">${escHtml(f.description)}</span></td>
+        <td>${escHtml(categoryLabel(f.category))}</td>
+        <td class="file-path">${escHtml(relPath)}:${f.location.startLine}</td>
+        <td>${cwe}</td>
+      </tr>`;
+    }).join('\n');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureScanner Report - ${escHtml(workspaceName)}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #e0e0e0; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  header { background: linear-gradient(135deg, #16213e, #0f3460); border-radius: 12px; padding: 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; }
+  header .logo { font-size: 2.5em; }
+  header h1 { font-size: 1.8em; color: #fff; }
+  header p { color: #8892b0; font-size: 0.95em; }
+  .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: #16213e; border-radius: 10px; padding: 20px; text-align: center; border: 1px solid #1a1a40; }
+  .card .number { font-size: 2.2em; font-weight: 700; }
+  .card .label { font-size: 0.85em; color: #8892b0; margin-top: 4px; }
+  .card.critical .number { color: #f44336; }
+  .card.high .number { color: #ff9800; }
+  .card.medium .number { color: #ffc107; }
+  .card.low .number { color: #2196f3; }
+  .card.info .number { color: #9e9e9e; }
+  .card.total .number { color: #fff; }
+  .section { background: #16213e; border-radius: 10px; padding: 24px; margin-bottom: 24px; border: 1px solid #1a1a40; }
+  .section h2 { font-size: 1.3em; margin-bottom: 16px; color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  th { text-align: left; padding: 10px 12px; background: #0f3460; border-bottom: 2px solid #1a1a40; color: #ccd6f6; font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid #1a1a40; vertical-align: top; }
+  tr:hover { background: rgba(255,255,255,0.03); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.8em; font-weight: 700; white-space: nowrap; }
+  .badge.critical { background: #f44336; color: #fff; }
+  .badge.high { background: #ff9800; color: #fff; }
+  .badge.medium { background: #ffc107; color: #333; }
+  .badge.low { background: #2196f3; color: #fff; }
+  .badge.info { background: #9e9e9e; color: #fff; }
+  .desc { color: #8892b0; font-size: 0.85em; }
+  .cwe { background: #2a2a4a; padding: 2px 8px; border-radius: 3px; font-size: 0.8em; color: #8892b0; }
+  .file-path { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85em; color: #64ffda; word-break: break-all; }
+  .category-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .category-tag { background: #0f3460; padding: 6px 14px; border-radius: 6px; font-size: 0.85em; }
+  .category-tag strong { color: #64ffda; }
+  footer { text-align: center; padding: 20px; color: #555; font-size: 0.8em; }
+  .no-findings { text-align: center; padding: 40px; color: #4caf50; font-size: 1.1em; }
+  @media print { body { background: #fff; color: #333; } .container { max-width: 100%; } header { background: #f5f5f5; } .section { background: #fff; border: 1px solid #ddd; } td, th { color: #333; } .desc { color: #666; } .file-path { color: #00695c; } tr:hover { background: transparent; } }
+  @media (max-width: 768px) { .summary-cards { grid-template-columns: repeat(2, 1fr); } header { flex-direction: column; text-align: center; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">🛡️</div>
+    <div>
+      <h1>SecureScanner Security Report</h1>
+      <p>Project: <strong>${escHtml(workspaceName)}</strong> &mdash; Generated: ${escHtml(dateStr)}</p>
+    </div>
+  </header>
+
+  <div class="summary-cards">
+    <div class="card total"><div class="number">${allFindings.length}</div><div class="label">Total Findings</div></div>
+    <div class="card critical"><div class="number">${severityCounts.critical}</div><div class="label">Critical</div></div>
+    <div class="card high"><div class="number">${severityCounts.high}</div><div class="label">High</div></div>
+    <div class="card medium"><div class="number">${severityCounts.medium}</div><div class="label">Medium</div></div>
+    <div class="card low"><div class="number">${severityCounts.low}</div><div class="label">Low</div></div>
+    <div class="card info"><div class="number">${severityCounts.info}</div><div class="label">Info</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Categories</h2>
+    <div class="category-bar">
+      ${Object.entries(categoryCounts).map(([cat, count]) => `<div class="category-tag"><strong>${count}</strong> ${escHtml(categoryLabel(cat))}</div>`).join('\n      ')}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Findings</h2>
+    ${allFindings.length === 0 ? '<div class="no-findings">✅ No security findings detected!</div>' : `
+    <table>
+      <thead><tr><th>Severity</th><th>Finding</th><th>Category</th><th>Location</th><th>CWE</th></tr></thead>
+      <tbody>${findingsRows}</tbody>
+    </table>`}
+  </div>
+
+  <footer>
+    Generated by SecureScanner for VS Code &mdash; ${escHtml(now.toISOString())}
+  </footer>
+</div>
+</body>
+</html>`;
+
     const uri = await vscode.window.showSaveDialog({
-      filters: { 'JSON': ['json'] },
-      defaultUri: vscode.Uri.file('security-report.json'),
+      filters: { 'HTML Report': ['html'] },
+      defaultUri: vscode.Uri.file('security-report.html'),
     });
 
     if (uri) {
-      const content = Buffer.from(JSON.stringify(report, null, 2), 'utf8');
+      const content = Buffer.from(html, 'utf8');
       await vscode.workspace.fs.writeFile(uri, content);
       vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
     }
@@ -260,6 +390,21 @@ export class DashboardPanel {
     }
   }
 
+  private async updatePipPackage(packageName: string): Promise<void> {
+    const terminal = vscode.window.createTerminal({ name: `pip upgrade ${packageName}` });
+    terminal.show();
+    terminal.sendText(`pip install --upgrade ${packageName}`);
+
+    this.panel.webview.postMessage({
+      type: 'pipPackageUpdateStarted',
+      packageName,
+    });
+
+    vscode.window.showInformationMessage(
+      `SecureScanner: Upgrading ${packageName} in terminal. Run "Check for Updates" again after installation completes.`
+    );
+  }
+
   private async toggleTestEnvironment(value: boolean): Promise<void> {
     const config = vscode.workspace.getConfiguration('secureScanner');
     await config.update('isTestEnvironment', value, vscode.ConfigurationTarget.Workspace);
@@ -268,8 +413,11 @@ export class DashboardPanel {
 
   private getHtmlContent(extensionUri: vscode.Uri): string {
     const nonce = getNonce();
-    const logoUri = this.panel.webview.asWebviewUri(
-      vscode.Uri.joinPath(extensionUri, 'media', 'logo.svg')
+    const shieldUri = this.panel.webview.asWebviewUri(
+      vscode.Uri.joinPath(extensionUri, 'media', 'shield-only.svg')
+    );
+    const maatLogoUri = this.panel.webview.asWebviewUri(
+      vscode.Uri.joinPath(extensionUri, 'media', 'SecureScannerLogo.png')
     );
 
     return /*html*/ `<!DOCTYPE html>
@@ -295,10 +443,6 @@ export class DashboardPanel {
       padding-bottom: 16px;
       border-bottom: 1px solid var(--vscode-panel-border);
     }
-    .branding-header img {
-      height: 52px;
-      width: auto;
-    }
     .branding-header .branding-text {
       display: flex;
       flex-direction: column;
@@ -311,6 +455,33 @@ export class DashboardPanel {
     .branding-header .branding-sub {
       font-size: 0.8em;
       opacity: 0.6;
+    }
+    .shield-logo {
+      position: relative;
+      width: 60px;
+      height: 69px;
+      flex-shrink: 0;
+    }
+    .shield-logo .shield-bg {
+      width: 100%;
+      height: 100%;
+    }
+    .shield-logo .inner-logo {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      width: 32px;
+      height: 32px;
+      transform: translate(-50%, -50%);
+      border-radius: 4px;
+      transition: transform 0.3s ease;
+    }
+    .shield-logo.scanning .inner-logo {
+      animation: spinLogo 1.5s linear infinite;
+    }
+    @keyframes spinLogo {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     .disclaimer {
       margin-top: 32px;
@@ -423,6 +594,34 @@ export class DashboardPanel {
     }
     .update-btn:hover { background: #2e7d32 !important; }
     .update-btn:disabled { background: #666 !important; opacity: 0.6; }
+    .check-updates-btn {
+      background: var(--vscode-button-background) !important;
+      color: var(--vscode-button-foreground) !important;
+      font-weight: bold;
+      font-size: 0.95em;
+      padding: 8px 18px !important;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .check-updates-btn:hover { background: var(--vscode-button-hoverBackground) !important; }
+    .check-updates-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pkg-update-btn {
+      background: #388e3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .pkg-update-btn:hover { background: #2e7d32; }
+    .pkg-update-btn:disabled { background: #666; opacity: 0.5; cursor: not-allowed; }
     .empty-state {
       text-align: center;
       padding: 60px 20px;
@@ -473,9 +672,12 @@ export class DashboardPanel {
 </head>
 <body>
   <div class="branding-header">
-    <img src="${logoUri}" alt="MaatInICT" />
+    <div class="shield-logo" id="shieldLogo">
+      <img class="shield-bg" src="${shieldUri}" alt="SecureScanner Shield" />
+      <img class="inner-logo" src="${maatLogoUri}" alt="MaatInICT" />
+    </div>
     <div class="branding-text">
-      <span class="branding-title">&#128737; SecureScanner</span>
+      <span class="branding-title">SecureScanner</span>
       <span class="branding-sub">Powered by MaatInICT B.V. &mdash; Quality Engineering &amp; Identity Expertise</span>
     </div>
   </div>
@@ -500,8 +702,7 @@ export class DashboardPanel {
     </select>
     <input type="text" id="searchInput" placeholder="Search findings...">
     <button id="scanWorkspaceBtn" class="primary-btn">&#128269; Scan Workspace</button>
-    <button id="scanFileBtn">&#128196; Scan Current File</button>
-    <button id="refreshBtn">&#8635; Refresh</button>
+<button id="refreshBtn">&#8635; Refresh</button>
     <button id="exportBtn">&#128190; Export Report</button>
   </div>
   <div class="toolbar" style="margin-top: -8px; margin-bottom: 16px; border-top: 1px solid var(--vscode-panel-border); padding-top: 8px;">
@@ -520,7 +721,7 @@ export class DashboardPanel {
   <div style="margin-top: 24px; border-top: 2px solid var(--vscode-panel-border); padding-top: 16px;">
     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
       <h2 style="margin: 0; font-size: 1.2em;">&#128230; Pip Package Updates</h2>
-      <button id="checkPipUpdatesBtn" class="update-btn">&#128269; Check for Updates</button>
+      <button id="checkPipUpdatesBtn" class="check-updates-btn">&#128269; Check for Updates</button>
       <span id="pipUpdateStatusText" style="font-size: 0.85em; display: none;"></span>
     </div>
     <div id="pipUpdatesContent" style="font-size: 0.85em; opacity: 0.7;">Click "Check for Updates" to scan requirements.txt files for outdated packages.</div>
@@ -621,10 +822,8 @@ export class DashboardPanel {
     document.getElementById('scanWorkspaceBtn').addEventListener('click', () => {
       document.getElementById('scanWorkspaceBtn').disabled = true;
       document.getElementById('scanWorkspaceBtn').textContent = 'Scanning...';
+      document.getElementById('shieldLogo').classList.add('scanning');
       vscode.postMessage({ command: 'scanWorkspace' });
-    });
-    document.getElementById('scanFileBtn').addEventListener('click', () => {
-      vscode.postMessage({ command: 'scanFile' });
     });
     document.getElementById('refreshBtn').addEventListener('click', () => {
       vscode.postMessage({ command: 'refresh' });
@@ -635,7 +834,6 @@ export class DashboardPanel {
     document.getElementById('testEnvToggle').addEventListener('change', (e) => {
       vscode.postMessage({ command: 'toggleTestEnvironment', value: e.target.checked });
     });
-
     document.getElementById('checkPipUpdatesBtn').addEventListener('click', () => {
       const btn = document.getElementById('checkPipUpdatesBtn');
       const statusText = document.getElementById('pipUpdateStatusText');
@@ -673,12 +871,17 @@ export class DashboardPanel {
         if (message.status === 'done') {
           btn.disabled = false;
           btn.innerHTML = '&#128269; Scan Workspace';
+          document.getElementById('shieldLogo').classList.remove('scanning');
         }
       }
       if (message.type === 'pipUpdateStatus') {
         const btn = document.getElementById('checkPipUpdatesBtn');
         const statusText = document.getElementById('pipUpdateStatusText');
         const content = document.getElementById('pipUpdatesContent');
+        if (message.status === 'checking') {
+          btn.disabled = true;
+          btn.textContent = 'Checking...';
+        }
         if (message.status === 'done') {
           btn.disabled = false;
           btn.innerHTML = '&#128269; Check for Updates';
@@ -691,7 +894,7 @@ export class DashboardPanel {
           } else {
             let html = '<div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 8px;">Source: ' + (message.indexUrl || 'PyPI') + '</div>';
             html += '<table><thead><tr>';
-            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th><th>Source</th>';
+            html += '<th>Package</th><th>Current Version</th><th>Latest Version</th><th>Source</th><th>Action</th>';
             html += '</tr></thead><tbody>';
             packages.forEach(function(pkg) {
               html += '<tr>';
@@ -699,10 +902,19 @@ export class DashboardPanel {
               html += '<td><span class="severity-badge medium">' + pkg.currentVersion + '</span></td>';
               html += '<td><span class="severity-badge info" style="background: #4caf50; color: white;">' + pkg.latestVersion + '</span></td>';
               html += '<td style="opacity: 0.7; font-size: 0.9em;">' + (pkg.source === 'installed' ? '&#128187; pip list' : '&#128196; requirements.txt') + '</td>';
+              html += '<td><button class="pkg-update-btn" data-pkg="' + pkg.name + '">&#11014; Update</button></td>';
               html += '</tr>';
             });
             html += '</tbody></table>';
             content.innerHTML = html;
+            content.querySelectorAll('.pkg-update-btn').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var pkgName = btn.getAttribute('data-pkg');
+                btn.disabled = true;
+                btn.textContent = 'Updating...';
+                vscode.postMessage({ command: 'updatePipPackage', packageName: pkgName });
+              });
+            });
             statusText.style.display = 'inline';
             statusText.textContent = packages.length + ' update(s) available';
             statusText.style.color = '#ff9800';
@@ -716,6 +928,13 @@ export class DashboardPanel {
           statusText.textContent = 'Check failed - verify connection and index URL';
           statusText.style.color = '#f44336';
           content.innerHTML = '<div style="padding: 12px; color: #f44336;">Failed to check for updates. Please verify your internet connection and pip index URL setting.</div>';
+        }
+      }
+      if (message.type === 'pipPackageUpdateStarted') {
+        var updatingBtn = document.querySelector('.pkg-update-btn[data-pkg="' + message.packageName + '"]');
+        if (updatingBtn) {
+          updatingBtn.disabled = true;
+          updatingBtn.textContent = 'Opened in terminal';
         }
       }
       if (message.type === 'vulnDbStatus') {
